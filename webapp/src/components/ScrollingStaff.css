@@ -1,0 +1,113 @@
+.staff-container {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  overflow: hidden;
+  background: #111;
+  border-radius: 8px;
+}
+
+/* Fixed "now" post */
+.now-post {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #e8a43a;
+  z-index: 10;
+  transition: box-shadow 0.05s ease;
+}
+
+.now-post.flash {
+  box-shadow: 0 0 12px 4px #e8a43a88;
+}
+
+/* Scrolling track */
+.staff-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+/* Horizontal staff line (fixed in container) */
+.staff-line {
+  position: absolute;
+  top: 72px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #555;
+  z-index: 1;
+}
+
+/* Measure group (absolutely positioned in track) */
+.measure-group {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+/* Measure separator - taller vertical line */
+.measure-separator {
+  position: absolute;
+  left: 0;
+  top: 52px;
+  height: 40px;
+  width: 2px;
+  background: #888;
+  transform: translateX(-50%);
+}
+
+/* Beat group */
+.beat-group {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Beat tickmark */
+.beat-tick {
+  position: absolute;
+  top: 58px;
+  left: 0;
+  width: 3px;
+  height: 14px;
+  background: #666;
+  transform: translateX(-50%);
+}
+
+/* Chord label above the beat */
+.beat-label {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ddd;
+  transform: translateX(-50%);
+  font-family: "Courier New", monospace;
+}
+
+/* Rest symbol */
+.rest-svg {
+  color: #555;
+  display: block;
+}
+
+/* Idle state */
+.staff-idle {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #555;
+  background: #111;
+}

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Settings, type SettingsValues } from "./components/Settings";
-import { Metronome } from "./components/Metronome";
-import { ExerciseDisplay } from "./components/ExerciseDisplay";
+import { ScrollingStaff } from "./components/ScrollingStaff";
 import { useMetronome } from "./hooks/useMetronome";
 import { useExercise } from "./hooks/useExercise";
 import "./App.css";
@@ -20,11 +19,11 @@ function App() {
   const metronome = useMetronome(settings.bpm, settings.beatsPerMeasure);
 
   const exercise = useExercise(
-    metronome.currentMeasure,
     metronome.isPlaying,
     settings.restMeasures,
     settings.measuresPerAttempt,
-    settings.attemptsPerExercise
+    settings.attemptsPerExercise,
+    settings.beatsPerMeasure
   );
 
   const handleToggle = () => {
@@ -39,11 +38,12 @@ function App() {
     <div className="app">
       <h1 className="title">Gimme Three Notes</h1>
 
-      <ExerciseDisplay exercise={exercise} isPlaying={metronome.isPlaying} />
-
-      <Metronome
+      <ScrollingStaff
+        bpm={settings.bpm}
         beatsPerMeasure={settings.beatsPerMeasure}
         currentBeat={metronome.currentBeat}
+        isPlaying={metronome.isPlaying}
+        getMeasureData={exercise.getMeasureData}
       />
 
       <button className="start-btn" onClick={handleToggle}>

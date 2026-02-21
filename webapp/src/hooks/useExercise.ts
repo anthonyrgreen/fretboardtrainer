@@ -1,185 +1,147 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { getRandomTriad, type Triad } from "../utils/chords";
 
-const ALL_NOTES = ["A", "B", "C", "D", "E", "F", "G"];
-const INVERSIONS = ["Root", "1st", "2nd"] as const;
-const NOTES_PER_EXERCISE = 3;
-
-export type Inversion = (typeof INVERSIONS)[number];
-
-export type ExercisePhase = "rest" | "play";
-
-export interface ExerciseState {
-  phase: ExercisePhase;
-  notes: string[];
-  currentInversion: Inversion;
-  currentAttempt: number; // 1-indexed for display
-  attemptsPerExercise: number;
+export interface BeatData {
+  label: string;
+  isRest: boolean;
 }
 
-function pickRandomNotes(count: number): string[] {
-  const shuffled = [...ALL_NOTES].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
+export interface MeasureData {
+  beats: BeatData[];
+  measureIndex: number;
+}
+
+interface ExerciseCycle {
+  triad: Triad;
+  startMeasure: number; // absolute measure index where this cycle starts
+  length: number; // total measures in this cycle
 }
 
 /**
- * Drives the exercise state machine based on measure count from the metronome.
+ * Produces measure data driven by the metronome's measure count.
  *
- * Exercise structure per cycle:
- *   - Rest: `restMeasures` measures
+ * Exercise cycle structure:
+ *   - `restMeasures` rest measures (count-in)
  *   - For each attempt (1..attemptsPerExercise):
- *     - For each inversion (Root, 1st, 2nd):
- *       - Play: `measuresPerAttempt` measures
- *     - Rest: 1 measure (between attempts, not after the last)
- *   - Then loop with new notes
+ *     - `measuresPerAttempt` play measures (same chord, all 3 inversions per measure)
+ *     - 1 rest measure between attempts (not after the last)
+ *   - New random chord → repeat
  */
 export function useExercise(
-  currentMeasure: number,
   isPlaying: boolean,
   restMeasures: number,
   measuresPerAttempt: number,
-  attemptsPerExercise: number
-): ExerciseState {
-  const [state, setState] = useState<ExerciseState>({
-    phase: "rest",
-    notes: pickRandomNotes(NOTES_PER_EXERCISE),
-    currentInversion: "Root",
-    currentAttempt: 1,
-    attemptsPerExercise,
-  });
+  attemptsPerExercise: number,
+  beatsPerMeasure: number
+) {
+  const cycleCache = useRef(new Map<number, ExerciseCycle>());
 
-  const prevMeasureRef = useRef(-1);
-
-  // Reset on stop
+  // Clear cache on stop
   useEffect(() => {
     if (!isPlaying) {
-      prevMeasureRef.current = -1;
-      setState({
-        phase: "rest",
-        notes: pickRandomNotes(NOTES_PER_EXERCISE),
-        currentInversion: "Root",
-        currentAttempt: 1,
-        attemptsPerExercise,
-      });
+      cycleCache.current.clear();
     }
-  }, [isPlaying, attemptsPerExercise]);
+  }, [isPlaying]);
 
-  useEffect(() => {
-    if (!isPlaying) return;
-    if (currentMeasure === prevMeasureRef.current) return;
-    prevMeasureRef.current = currentMeasure;
+  const getCycleLength = useCallback(() => {
+    const playMeasures = attemptsPerExercise * measuresPerAttempt;
+    const restBetween = attemptsPerExercise > 1 ? attemptsPerExercise - 1 : 0;
+    return restMeasures + playMeasures + restBetween;
+  }, [restMeasures, measuresPerAttempt, attemptsPerExercise]);
 
-    setState((prev) => {
-      return computeState(
-        currentMeasure,
-        restMeasures,
-        measuresPerAttempt,
-        attemptsPerExercise,
-        prev.notes
-      );
-    });
-  }, [
-    currentMeasure,
-    isPlaying,
-    restMeasures,
-    measuresPerAttempt,
-    attemptsPerExercise,
-  ]);
+  const getCycleForMeasure = useCallback(
+    (measureIndex: number): ExerciseCycle => {
+      const cycleLen = getCycleLength();
+      const cycleIndex = Math.floor(measureIndex / cycleLen);
 
-  return state;
-}
+      if (cycleCache.current.has(cycleIndex)) {
+        return cycleCache.current.get(cycleIndex)!;
+      }
 
-function computeState(
-  absoluteMeasure: number,
-  restMeasures: number,
-  measuresPerAttempt: number,
-  attemptsPerExercise: number,
-  currentNotes: string[]
-): ExerciseState {
-  // One full exercise cycle length:
-  // restMeasures (initial rest)
-  // + attemptsPerExercise * (3 inversions * measuresPerAttempt)
-  // + (attemptsPerExercise - 1) * 1 (rest between attempts)
-  const playMeasuresPerAttempt = INVERSIONS.length * measuresPerAttempt;
-  const restBetweenAttempts = attemptsPerExercise > 1 ? attemptsPerExercise - 1 : 0;
-  const cycleLength =
-    restMeasures +
-    attemptsPerExercise * playMeasuresPerAttempt +
-    restBetweenAttempts;
+      // Keep cache bounded
+      if (cycleCache.current.size > 50) {
+        const firstKey = cycleCache.current.keys().next().value;
+        if (firstKey !== undefined) cycleCache.current.delete(firstKey);
+      }
 
-  const posInCycle = absoluteMeasure % cycleLength;
-  const cycleIndex = Math.floor(absoluteMeasure / cycleLength);
-
-  // Determine notes — new random set each cycle
-  // Use a seeded approach: generate based on cycle index
-  const notes =
-    cycleIndex === 0 && absoluteMeasure < cycleLength
-      ? currentNotes
-      : pickNotesForCycle(cycleIndex);
-
-  // Initial rest phase
-  if (posInCycle < restMeasures) {
-    return {
-      phase: "rest",
-      notes,
-      currentInversion: "Root",
-      currentAttempt: 1,
-      attemptsPerExercise,
-    };
-  }
-
-  // Play + rest-between-attempts phase
-  let pos = posInCycle - restMeasures;
-
-  for (let attempt = 0; attempt < attemptsPerExercise; attempt++) {
-    // Play phase for this attempt
-    if (pos < playMeasuresPerAttempt) {
-      const inversionIdx = Math.floor(pos / measuresPerAttempt);
-      return {
-        phase: "play",
-        notes,
-        currentInversion: INVERSIONS[inversionIdx],
-        currentAttempt: attempt + 1,
-        attemptsPerExercise,
+      const cycle: ExerciseCycle = {
+        triad: getRandomTriad("major"),
+        startMeasure: cycleIndex * cycleLen,
+        length: cycleLen,
       };
-    }
-    pos -= playMeasuresPerAttempt;
+      cycleCache.current.set(cycleIndex, cycle);
+      return cycle;
+    },
+    [getCycleLength]
+  );
 
-    // Rest between attempts (except after last)
-    if (attempt < attemptsPerExercise - 1) {
-      if (pos < 1) {
+  const getMeasureData = useCallback(
+    (measureIndex: number): MeasureData => {
+      const cycle = getCycleForMeasure(measureIndex);
+      const posInCycle = measureIndex - cycle.startMeasure;
+
+      // Rest measures at start of cycle
+      if (posInCycle < restMeasures) {
         return {
-          phase: "rest",
-          notes,
-          currentInversion: INVERSIONS[0],
-          currentAttempt: attempt + 2,
-          attemptsPerExercise,
+          measureIndex,
+          beats: makeRestBeats(beatsPerMeasure),
         };
       }
-      pos -= 1;
-    }
-  }
 
-  // Shouldn't reach here, but fallback
-  return {
-    phase: "rest",
-    notes,
-    currentInversion: "Root",
-    currentAttempt: 1,
-    attemptsPerExercise,
-  };
+      // Play + rest-between-attempts
+      let pos = posInCycle - restMeasures;
+      for (let attempt = 0; attempt < attemptsPerExercise; attempt++) {
+        // Play measures for this attempt
+        if (pos < measuresPerAttempt) {
+          return {
+            measureIndex,
+            beats: makePlayBeats(cycle.triad, beatsPerMeasure),
+          };
+        }
+        pos -= measuresPerAttempt;
+
+        // Rest between attempts
+        if (attempt < attemptsPerExercise - 1) {
+          if (pos < 1) {
+            return {
+              measureIndex,
+              beats: makeRestBeats(beatsPerMeasure),
+            };
+          }
+          pos -= 1;
+        }
+      }
+
+      // Fallback (shouldn't happen)
+      return {
+        measureIndex,
+        beats: makeRestBeats(beatsPerMeasure),
+      };
+    },
+    [
+      getCycleForMeasure,
+      restMeasures,
+      measuresPerAttempt,
+      attemptsPerExercise,
+      beatsPerMeasure,
+    ]
+  );
+
+  return { getMeasureData };
 }
 
-// Simple way to get different notes per cycle
-const cycleNotesCache = new Map<number, string[]>();
+function makeRestBeats(beatsPerMeasure: number): BeatData[] {
+  return Array.from({ length: beatsPerMeasure }, () => ({
+    label: "",
+    isRest: true,
+  }));
+}
 
-function pickNotesForCycle(cycleIndex: number): string[] {
-  if (!cycleNotesCache.has(cycleIndex)) {
-    // Keep cache bounded
-    if (cycleNotesCache.size > 100) {
-      const firstKey = cycleNotesCache.keys().next().value;
-      if (firstKey !== undefined) cycleNotesCache.delete(firstKey);
+function makePlayBeats(triad: Triad, beatsPerMeasure: number): BeatData[] {
+  return Array.from({ length: beatsPerMeasure }, (_, i) => {
+    if (i < 3) {
+      return { label: triad.inversions[i], isRest: false };
     }
-    cycleNotesCache.set(cycleIndex, pickRandomNotes(NOTES_PER_EXERCISE));
-  }
-  return cycleNotesCache.get(cycleIndex)!;
+    return { label: "", isRest: true };
+  });
 }
