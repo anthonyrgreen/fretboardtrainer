@@ -1,0 +1,35 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 40px 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  letter-spacing: 1px;
+}
+
+.start-btn {
+  padding: 12px 48px;
+  font-size: 18px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 2px solid #e8a43a;
+  background: transparent;
+  color: #e8a43a;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.start-btn:hover {
+  background: #e8a43a;
+  color: #1a1a1a;
+  border-color: #e8a43a;
+}
