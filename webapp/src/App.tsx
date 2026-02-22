@@ -42,6 +42,7 @@ function App() {
         bpm={settings.bpm}
         beatsPerMeasure={settings.beatsPerMeasure}
         currentBeat={metronome.currentBeat}
+        currentMeasure={metronome.currentMeasure}
         isPlaying={metronome.isPlaying}
         getMeasureData={exercise.getMeasureData}
       />

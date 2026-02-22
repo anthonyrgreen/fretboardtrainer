@@ -36,9 +36,10 @@ export function useExercise(
 ) {
   const cycleCache = useRef(new Map<number, ExerciseCycle>());
 
-  // Clear cache on stop
+  // Clear cache on start so each session gets fresh chords.
+  // Cache is kept on stop so the paused display retains its chords.
   useEffect(() => {
-    if (!isPlaying) {
+    if (isPlaying) {
       cycleCache.current.clear();
     }
   }, [isPlaying]);
