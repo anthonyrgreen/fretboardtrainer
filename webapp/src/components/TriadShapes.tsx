@@ -98,7 +98,8 @@ function getMajorTriad(rootIndex: number) {
 }
 
 // Relative dot positions for each inversion (relative to root offset)
-const INV_SHAPES = [
+// G–B–e strings (strings 3, 4, 5): G→B is M3, B→e is P4
+const INV_SHAPES_GBE = [
   {
     type: "2nd" as const,
     lowestRel: 0,
@@ -128,13 +129,46 @@ const INV_SHAPES = [
   },
 ];
 
+// E–A–D strings (strings 0, 1, 2): E→A is P4, A→D is P4
+const INV_SHAPES_EAD = [
+  {
+    type: "2nd" as const,
+    lowestRel: 2,
+    dots: [
+      { string: 0, rel: 3, note: "fifth" as const },
+      { string: 1, rel: 3, note: "root" as const },
+      { string: 2, rel: 2, note: "third" as const },
+    ],
+  },
+  {
+    type: "root" as const,
+    lowestRel: 5,
+    dots: [
+      { string: 0, rel: 8, note: "root" as const },
+      { string: 1, rel: 7, note: "third" as const },
+      { string: 2, rel: 5, note: "fifth" as const },
+    ],
+  },
+  {
+    type: "1st" as const,
+    lowestRel: 10,
+    dots: [
+      { string: 0, rel: 12, note: "third" as const },
+      { string: 1, rel: 10, note: "fifth" as const },
+      { string: 2, rel: 10, note: "root" as const },
+    ],
+  },
+];
+
 type InvType = "root" | "1st" | "2nd";
 
-function computeInversions(rootIndex: number) {
+type InvShape = typeof INV_SHAPES_GBE;
+
+function computeInversions(rootIndex: number, shapes: InvShape) {
   const { root, third, fifth } = getMajorTriad(rootIndex);
   const noteNames = { root, third, fifth };
 
-  const groups = INV_SHAPES.map((shape) => {
+  const groups = shapes.map((shape) => {
     const absLowest = rootIndex + shape.lowestRel;
     const wrap = absLowest >= 12;
     const shift = wrap ? -12 : 0;
@@ -265,11 +299,17 @@ function FretboardDiagram({ shape }: { shape: ShapeData }) {
 }
 
 const H_START_FRET = 0;
-const H_END_FRET = 13;
+const H_END_FRET = 14;
 const H_SPAN = H_END_FRET - H_START_FRET;
 
-function InversionFretboard({ rootIndex }: { rootIndex: number }) {
-  const { allDots, labels } = computeInversions(rootIndex);
+interface InvFretboardProps {
+  rootIndex: number;
+  shapes: InvShape;
+  activeStrings: Set<number>;
+}
+
+function InversionFretboard({ rootIndex, shapes, activeStrings }: InvFretboardProps) {
+  const { allDots, labels } = computeInversions(rootIndex, shapes);
 
   const svgW = H_PAD_L + H_SPAN * H_FRET_GAP + H_PAD_R;
   const svgH = H_PAD_T + 5 * H_STRING_GAP + H_PAD_B;
@@ -318,8 +358,8 @@ function InversionFretboard({ rootIndex }: { rootIndex: number }) {
           y1={stringY(i)}
           x2={fretToX(H_END_FRET)}
           y2={stringY(i)}
-          stroke={i < 3 ? "#333" : "#666"}
-          strokeWidth={i < 3 ? 2 : 1}
+          stroke={activeStrings.has(i) ? "#666" : "#333"}
+          strokeWidth={activeStrings.has(i) ? 1 : 2}
         />
       ))}
 
@@ -413,6 +453,7 @@ export function TriadShapes() {
   const [open, setOpen] = useState(false);
   const [rootIndex, setRootIndex] = useState(0);
   const collapseRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
 
   const { root, third, fifth } = getMajorTriad(rootIndex);
 
@@ -423,7 +464,7 @@ export function TriadShapes() {
       collapseRef.current?.addEventListener(
         "transitionend",
         () => {
-          collapseRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+          toggleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         },
         { once: true }
       );
@@ -432,7 +473,7 @@ export function TriadShapes() {
 
   return (
     <div className="triad-shapes">
-      <button className="triad-shapes-toggle" onClick={toggle}>
+      <button ref={toggleRef} className="triad-shapes-toggle" onClick={toggle}>
         <span className={`triad-shapes-arrow${open ? " open" : ""}`}>&#x25B8;</span>
         Triad shapes
       </button>
@@ -463,7 +504,11 @@ export function TriadShapes() {
               </button>
             ))}
           </div>
-          <InversionFretboard rootIndex={rootIndex} />
+          <InversionFretboard rootIndex={rootIndex} shapes={INV_SHAPES_GBE} activeStrings={new Set([3, 4, 5])} />
+          <p className="inversions-text">
+            But these inversions could also be played on the D–A–E strings:
+          </p>
+          <InversionFretboard rootIndex={rootIndex} shapes={INV_SHAPES_EAD} activeStrings={new Set([0, 1, 2])} />
           <p className="inversions-text inversions-bridge">
             The full shapes below show how these inversions connect across all six strings.
           </p>
