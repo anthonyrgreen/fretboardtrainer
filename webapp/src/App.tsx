@@ -13,8 +13,9 @@ const DEFAULT_SETTINGS: SettingsValues = {
 
 function App() {
   const [settings, setSettings] = useState<SettingsValues>(DEFAULT_SETTINGS);
+  const [muted, setMuted] = useState(false);
 
-  const metronome = useMetronome(settings.bpm, settings.beatsPerMeasure);
+  const metronome = useMetronome(settings.bpm, settings.beatsPerMeasure, muted);
 
   const exercise = useExercise(
     settings.measuresPerChord,
@@ -78,6 +79,13 @@ function App() {
         onChange={handleSettingsChange}
         disableStructure={metronome.playState === "playing"}
       />
+
+      <button
+        className="mute-btn"
+        onClick={() => setMuted((m) => !m)}
+      >
+        {muted ? "Unmute" : "Mute"}
+      </button>
     </div>
   );
 }

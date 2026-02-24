@@ -79,6 +79,21 @@ describe("App", () => {
     expect(screen.getByLabelText("Measures / Chord")).toBeDisabled();
   });
 
+  it("renders mute button", () => {
+    render(<App />);
+    expect(screen.getByText("Mute")).toBeInTheDocument();
+  });
+
+  it("mute button toggles to Unmute when clicked", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByText("Mute"));
+    expect(screen.getByText("Unmute")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Unmute"));
+    expect(screen.getByText("Mute")).toBeInTheDocument();
+  });
+
   it("structure settings are not disabled while paused", () => {
     render(<App />);
 

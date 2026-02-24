@@ -56,3 +56,19 @@
   color: #1a1a1a;
   border-color: #cc4444;
 }
+
+.mute-btn {
+  padding: 8px 24px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #888;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.mute-btn:hover {
+  background: #888;
+  color: #1a1a1a;
+}

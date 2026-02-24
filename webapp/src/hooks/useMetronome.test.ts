@@ -154,6 +154,40 @@ describe("useMetronome", () => {
     expect(result.current.currentBeat).toBe(beatAtPause);
   });
 
+  it("does not call playClick when muted", async () => {
+    const { playClick } = await import("../utils/audio");
+    const mockPlayClick = vi.mocked(playClick);
+    mockPlayClick.mockClear();
+
+    const { result } = renderHook(() => useMetronome(600, 4, true));
+
+    act(() => {
+      result.current.start();
+    });
+
+    expect(mockPlayClick).not.toHaveBeenCalled();
+
+    act(() => {
+      vi.advanceTimersByTime(110);
+    });
+
+    expect(mockPlayClick).not.toHaveBeenCalled();
+  });
+
+  it("calls playClick when not muted", async () => {
+    const { playClick } = await import("../utils/audio");
+    const mockPlayClick = vi.mocked(playClick);
+    mockPlayClick.mockClear();
+
+    const { result } = renderHook(() => useMetronome(600, 4, false));
+
+    act(() => {
+      result.current.start();
+    });
+
+    expect(mockPlayClick).toHaveBeenCalled();
+  });
+
   it("cleans up interval on unmount", () => {
     const { result, unmount } = renderHook(() => useMetronome(120, 4));
 

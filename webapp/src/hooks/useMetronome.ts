@@ -18,7 +18,8 @@ export interface MetronomeControls {
 
 export function useMetronome(
   bpm: number,
-  beatsPerMeasure: number
+  beatsPerMeasure: number,
+  muted: boolean = false
 ): MetronomeState & MetronomeControls {
   const [playState, setPlayState] = useState<PlayState>("idle");
   const [currentBeat, setCurrentBeat] = useState(-1);
@@ -31,6 +32,8 @@ export function useMetronome(
   const bpmRef = useRef(bpm);
   const beatsPerMeasureRef = useRef(beatsPerMeasure);
   const pausedAtRef = useRef(0);
+  const mutedRef = useRef(muted);
+  mutedRef.current = muted;
 
   // When BPM changes mid-playback, reanchor nextBeatTime to preserve
   // the fraction of the current beat that has already elapsed.
@@ -60,7 +63,7 @@ export function useMetronome(
       }
 
       const isAccent = beatRef.current === 0;
-      playClick(isAccent);
+      if (!mutedRef.current) playClick(isAccent);
 
       setCurrentBeat(beatRef.current);
       setCurrentMeasure(measureRef.current);
@@ -97,7 +100,7 @@ export function useMetronome(
     // Fire the first beat immediately
     beatRef.current = 0;
     measureRef.current = 0;
-    playClick(true);
+    if (!mutedRef.current) playClick(true);
     setCurrentBeat(0);
     setCurrentMeasure(0);
 

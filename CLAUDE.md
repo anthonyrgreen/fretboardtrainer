@@ -85,6 +85,7 @@ npm run test:e2e:update  # Regenerate screenshot baselines
 - **Main branch**: `main`
 - **Working branch**: `master`
 - Commit messages should be concise and descriptive
+- **Before every commit**: run `npm test` and `npm run build && npm run test:e2e`. If screenshot baselines need updating due to visual changes, run `npm run test:e2e:update` first.
 
 ## Conventions
 
@@ -92,3 +93,4 @@ npm run test:e2e:update  # Regenerate screenshot baselines
 - CSS modules per component (`.css` file alongside `.tsx`)
 - Constants at top of file (e.g. `PIXELS_PER_BEAT`, `NOW_POST_X`)
 - TypeScript strict mode — no `any`, explicit interfaces for props and data
+- Every new feature must include tests — add unit tests for new logic and integration tests for new UI behavior
