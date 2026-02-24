@@ -57,4 +57,12 @@ test.describe("Visual regression", () => {
     const staff = page.locator(".staff-container");
     await expect(staff).toHaveScreenshot("staff-idle.png");
   });
+
+  test("staff shows all beats after adding a beat", async ({ page }) => {
+    // Add a rest beat via the + button
+    await page.click('[title="Add beat"]');
+
+    const staff = page.locator(".staff-container");
+    await expect(staff).toHaveScreenshot("staff-5-beats.png");
+  });
 });

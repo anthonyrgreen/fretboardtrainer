@@ -37,3 +37,98 @@
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
+
+.pattern-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.pattern-label {
+  font-size: 14px;
+  color: #ccc;
+  text-align: center;
+}
+
+.pattern-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+
+.pattern-slots {
+  display: flex;
+  gap: 4px;
+}
+
+.pattern-slot {
+  width: 48px;
+  height: 36px;
+  border-radius: 6px;
+  border: 2px solid #555;
+  background: transparent;
+  color: #ccc;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.pattern-slot:hover:not(:disabled) {
+  border-color: #888;
+}
+
+.pattern-slot.root,
+.pattern-slot.\31st,
+.pattern-slot.\32nd {
+  border-color: #e8a43a;
+  color: #e8a43a;
+}
+
+.pattern-slot.random {
+  border-color: #6bb5e8;
+  color: #6bb5e8;
+}
+
+.pattern-slot.rest {
+  border-color: #555;
+  color: #666;
+}
+
+.pattern-slot.disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pattern-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pattern-btn {
+  width: 28px;
+  height: 17px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: transparent;
+  color: #888;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pattern-btn:hover:not(:disabled) {
+  border-color: #888;
+  color: #ccc;
+}
+
+.pattern-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}

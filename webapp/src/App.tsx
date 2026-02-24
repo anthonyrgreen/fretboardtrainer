@@ -7,7 +7,7 @@ import "./App.css";
 
 const DEFAULT_SETTINGS: SettingsValues = {
   bpm: 80,
-  beatsPerMeasure: 4,
+  beatPattern: ["root", "1st", "2nd", "rest"],
   measuresPerChord: 4,
 };
 
@@ -15,11 +15,12 @@ function App() {
   const [settings, setSettings] = useState<SettingsValues>(DEFAULT_SETTINGS);
   const [muted, setMuted] = useState(false);
 
-  const metronome = useMetronome(settings.bpm, settings.beatsPerMeasure, muted);
+  const beatsPerMeasure = settings.beatPattern.length;
+  const metronome = useMetronome(settings.bpm, beatsPerMeasure, muted);
 
   const exercise = useExercise(
     settings.measuresPerChord,
-    settings.beatsPerMeasure
+    settings.beatPattern
   );
 
   const handleStart = () => {
@@ -29,7 +30,8 @@ function App() {
 
   const handleSettingsChange = (newSettings: SettingsValues) => {
     const structureChanged =
-      newSettings.beatsPerMeasure !== settings.beatsPerMeasure ||
+      newSettings.beatPattern.length !== settings.beatPattern.length ||
+      newSettings.beatPattern.some((s, i) => s !== settings.beatPattern[i]) ||
       newSettings.measuresPerChord !== settings.measuresPerChord;
 
     setSettings(newSettings);
@@ -46,7 +48,7 @@ function App() {
 
       <ScrollingStaff
         bpm={settings.bpm}
-        beatsPerMeasure={settings.beatsPerMeasure}
+        beatsPerMeasure={beatsPerMeasure}
         currentBeat={metronome.currentBeat}
         currentMeasure={metronome.currentMeasure}
         playState={metronome.playState}

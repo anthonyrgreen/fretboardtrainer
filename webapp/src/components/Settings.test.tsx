@@ -4,19 +4,18 @@ import { Settings, type SettingsValues } from "./Settings";
 
 const defaultValues: SettingsValues = {
   bpm: 80,
-  beatsPerMeasure: 4,
+  beatPattern: ["root", "1st", "2nd", "rest"],
   measuresPerChord: 4,
 };
 
 describe("Settings", () => {
-  it("renders three labeled sliders", () => {
+  it("renders BPM and measures/chord sliders", () => {
     render(
       <Settings values={defaultValues} onChange={() => {}} disableStructure={false} />
     );
 
     expect(screen.getByLabelText("BPM")).toBeInTheDocument();
-    expect(screen.getByLabelText("Beats / Measure")).toBeInTheDocument();
-    expect(screen.getByLabelText("Measures / Chord")).toBeInTheDocument();
+    expect(screen.getByLabelText("Measures / Pattern")).toBeInTheDocument();
   });
 
   it("displays current BPM value", () => {
@@ -46,39 +45,106 @@ describe("Settings", () => {
     });
   });
 
-  it("calls onChange when beats/measure slider changes", () => {
+  it("renders beat pattern slots", () => {
+    render(
+      <Settings values={defaultValues} onChange={() => {}} disableStructure={false} />
+    );
+
+    expect(screen.getByText("Root")).toBeInTheDocument();
+    expect(screen.getByText("1st")).toBeInTheDocument();
+    expect(screen.getByText("2nd")).toBeInTheDocument();
+    expect(screen.getByText("Rest")).toBeInTheDocument();
+  });
+
+  it("clicking a pattern slot cycles to next type", () => {
     const onChange = vi.fn();
     render(
       <Settings values={defaultValues} onChange={onChange} disableStructure={false} />
     );
 
-    fireEvent.input(screen.getByLabelText("Beats / Measure"), {
-      target: { value: "6" },
-    });
+    // Click the "Root" slot — should cycle to "1st"
+    fireEvent.click(screen.getByText("Root"));
 
     expect(onChange).toHaveBeenCalledWith({
       ...defaultValues,
-      beatsPerMeasure: 6,
+      beatPattern: ["1st", "1st", "2nd", "rest"],
     });
   });
 
-  it("disableStructure disables beats/measure and measures/chord but not bpm", () => {
+  it("+ button adds a rest beat", () => {
+    const onChange = vi.fn();
+    render(
+      <Settings values={defaultValues} onChange={onChange} disableStructure={false} />
+    );
+
+    fireEvent.click(screen.getByTitle("Add beat"));
+
+    expect(onChange).toHaveBeenCalledWith({
+      ...defaultValues,
+      beatPattern: ["root", "1st", "2nd", "rest", "rest"],
+    });
+  });
+
+  it("- button removes last beat", () => {
+    const onChange = vi.fn();
+    render(
+      <Settings values={defaultValues} onChange={onChange} disableStructure={false} />
+    );
+
+    fireEvent.click(screen.getByTitle("Remove beat"));
+
+    expect(onChange).toHaveBeenCalledWith({
+      ...defaultValues,
+      beatPattern: ["root", "1st", "2nd"],
+    });
+  });
+
+  it("disableStructure disables pattern slots and measures/chord but not bpm", () => {
     render(
       <Settings values={defaultValues} onChange={() => {}} disableStructure={true} />
     );
 
     expect(screen.getByLabelText("BPM")).not.toBeDisabled();
-    expect(screen.getByLabelText("Beats / Measure")).toBeDisabled();
-    expect(screen.getByLabelText("Measures / Chord")).toBeDisabled();
+    expect(screen.getByLabelText("Measures / Pattern")).toBeDisabled();
+
+    // Pattern slots should be disabled
+    const rootSlot = screen.getByText("Root");
+    expect(rootSlot).toBeDisabled();
   });
 
-  it("all sliders enabled when disableStructure is false", () => {
+  it("all controls enabled when disableStructure is false", () => {
     render(
       <Settings values={defaultValues} onChange={() => {}} disableStructure={false} />
     );
 
     expect(screen.getByLabelText("BPM")).not.toBeDisabled();
-    expect(screen.getByLabelText("Beats / Measure")).not.toBeDisabled();
-    expect(screen.getByLabelText("Measures / Chord")).not.toBeDisabled();
+    expect(screen.getByLabelText("Measures / Pattern")).not.toBeDisabled();
+
+    const rootSlot = screen.getByText("Root");
+    expect(rootSlot).not.toBeDisabled();
+  });
+
+  it("+ button is disabled at max 8 beats", () => {
+    const maxValues: SettingsValues = {
+      ...defaultValues,
+      beatPattern: ["root", "1st", "2nd", "rest", "rest", "rest", "rest", "rest"],
+    };
+    render(
+      <Settings values={maxValues} onChange={() => {}} disableStructure={false} />
+    );
+
+    expect(screen.getByTitle("Add beat")).toBeDisabled();
+  });
+
+  it("- button is disabled at min 1 beat", () => {
+    const minValues: SettingsValues = {
+      ...defaultValues,
+      beatPattern: ["root"],
+    };
+    render(
+      <Settings values={minValues} onChange={() => {}} disableStructure={false} />
+    );
+
+    expect(screen.getByTitle("Remove beat")).toBeDisabled();
   });
 });

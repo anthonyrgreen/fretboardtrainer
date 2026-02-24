@@ -53,20 +53,25 @@ describe("App", () => {
     expect(screen.getByText("Reset")).toBeInTheDocument();
   });
 
-  it("renders settings sliders", () => {
+  it("renders BPM and measures/chord settings", () => {
     render(<App />);
 
     expect(screen.getByLabelText("BPM")).toBeInTheDocument();
-    expect(screen.getByLabelText("Beats / Measure")).toBeInTheDocument();
-    expect(screen.getByLabelText("Measures / Chord")).toBeInTheDocument();
+    expect(screen.getByLabelText("Measures / Pattern")).toBeInTheDocument();
+  });
+
+  it("renders beat pattern editor", () => {
+    render(<App />);
+
+    expect(screen.getByText("Measure pattern")).toBeInTheDocument();
+    expect(screen.getByText("Root")).toBeInTheDocument();
   });
 
   it("settings are not disabled in idle state", () => {
     render(<App />);
 
     expect(screen.getByLabelText("BPM")).not.toBeDisabled();
-    expect(screen.getByLabelText("Beats / Measure")).not.toBeDisabled();
-    expect(screen.getByLabelText("Measures / Chord")).not.toBeDisabled();
+    expect(screen.getByLabelText("Measures / Pattern")).not.toBeDisabled();
   });
 
   it("structure settings are disabled while playing", () => {
@@ -75,8 +80,7 @@ describe("App", () => {
     fireEvent.click(screen.getByText("Start"));
 
     expect(screen.getByLabelText("BPM")).not.toBeDisabled();
-    expect(screen.getByLabelText("Beats / Measure")).toBeDisabled();
-    expect(screen.getByLabelText("Measures / Chord")).toBeDisabled();
+    expect(screen.getByLabelText("Measures / Pattern")).toBeDisabled();
   });
 
   it("renders mute button", () => {
@@ -100,7 +104,6 @@ describe("App", () => {
     fireEvent.click(screen.getByText("Start"));
     fireEvent.click(screen.getByText("Pause"));
 
-    expect(screen.getByLabelText("Beats / Measure")).not.toBeDisabled();
-    expect(screen.getByLabelText("Measures / Chord")).not.toBeDisabled();
+    expect(screen.getByLabelText("Measures / Pattern")).not.toBeDisabled();
   });
 });
