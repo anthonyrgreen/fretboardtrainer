@@ -41,11 +41,14 @@ describe("TriadShapesContent", () => {
     expect(screen.getByRole("button", { name: "F#" })).toBeInTheDocument();
   });
 
-  it("renders inversion fretboard with labels", () => {
+  it("renders major and minor inversion fretboards with labels", () => {
     render(<TriadShapesContent />);
-    expect(screen.getByText(/Root — C/)).toBeInTheDocument();
-    expect(screen.getByText(/1st inv/)).toBeInTheDocument();
-    expect(screen.getByText(/2nd inv/)).toBeInTheDocument();
+    // Both major and minor fretboards have Root/1st/2nd labels
+    expect(screen.getAllByText(/Root — C/)).toHaveLength(2);
+    expect(screen.getAllByText(/1st inv/)).toHaveLength(2);
+    expect(screen.getAllByText(/2nd inv/)).toHaveLength(2);
+    expect(screen.getByText("Major")).toBeInTheDocument();
+    expect(screen.getByText("Minor")).toBeInTheDocument();
   });
 
   it("defaults to G-B-e string group", () => {

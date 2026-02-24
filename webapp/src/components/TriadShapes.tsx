@@ -97,6 +97,13 @@ function getMajorTriad(rootIndex: number) {
   return { root, third, fifth };
 }
 
+function getMinorTriad(rootIndex: number) {
+  const root  = NOTES[rootIndex];
+  const third = NOTES[(rootIndex + 3) % 12];
+  const fifth = NOTES[(rootIndex + 7) % 12];
+  return { root, third, fifth };
+}
+
 // Relative dot positions for each inversion (relative to root offset)
 // G–B–e strings (strings 3, 4, 5): G→B is M3, B→e is P4
 const INV_SHAPES_GBE = [
@@ -222,19 +229,145 @@ const INV_SHAPES_DGB = [
   },
 ];
 
+/* ── Minor inversion shapes ── */
+
+// G–B–e minor (strings 3, 4, 5)
+const INV_SHAPES_GBE_MINOR = [
+  {
+    type: "root" as const,
+    lowestRel: 3,
+    dots: [
+      { string: 3, rel: 5, note: "root" as const },
+      { string: 4, rel: 4, note: "third" as const },
+      { string: 5, rel: 3, note: "fifth" as const },
+    ],
+  },
+  {
+    type: "1st" as const,
+    lowestRel: 8,
+    dots: [
+      { string: 3, rel: 8, note: "third" as const },
+      { string: 4, rel: 8, note: "fifth" as const },
+      { string: 5, rel: 8, note: "root" as const },
+    ],
+  },
+  {
+    type: "2nd" as const,
+    lowestRel: 11,
+    dots: [
+      { string: 3, rel: 12, note: "fifth" as const },
+      { string: 4, rel: 13, note: "root" as const },
+      { string: 5, rel: 11, note: "third" as const },
+    ],
+  },
+];
+
+// E–A–D minor (strings 0, 1, 2)
+const INV_SHAPES_EAD_MINOR = [
+  {
+    type: "2nd" as const,
+    lowestRel: 1,
+    dots: [
+      { string: 0, rel: 3, note: "fifth" as const },
+      { string: 1, rel: 3, note: "root" as const },
+      { string: 2, rel: 1, note: "third" as const },
+    ],
+  },
+  {
+    type: "root" as const,
+    lowestRel: 5,
+    dots: [
+      { string: 0, rel: 8, note: "root" as const },
+      { string: 1, rel: 6, note: "third" as const },
+      { string: 2, rel: 5, note: "fifth" as const },
+    ],
+  },
+  {
+    type: "1st" as const,
+    lowestRel: 10,
+    dots: [
+      { string: 0, rel: 11, note: "third" as const },
+      { string: 1, rel: 10, note: "fifth" as const },
+      { string: 2, rel: 10, note: "root" as const },
+    ],
+  },
+];
+
+// A–D–G minor (strings 1, 2, 3)
+const INV_SHAPES_ADG_MINOR = [
+  {
+    type: "root" as const,
+    lowestRel: 0,
+    dots: [
+      { string: 1, rel: 3, note: "root" as const },
+      { string: 2, rel: 1, note: "third" as const },
+      { string: 3, rel: 0, note: "fifth" as const },
+    ],
+  },
+  {
+    type: "1st" as const,
+    lowestRel: 5,
+    dots: [
+      { string: 1, rel: 6, note: "third" as const },
+      { string: 2, rel: 5, note: "fifth" as const },
+      { string: 3, rel: 5, note: "root" as const },
+    ],
+  },
+  {
+    type: "2nd" as const,
+    lowestRel: 8,
+    dots: [
+      { string: 1, rel: 10, note: "fifth" as const },
+      { string: 2, rel: 10, note: "root" as const },
+      { string: 3, rel: 8, note: "third" as const },
+    ],
+  },
+];
+
+// D–G–B minor (strings 2, 3, 4)
+const INV_SHAPES_DGB_MINOR = [
+  {
+    type: "1st" as const,
+    lowestRel: 0,
+    dots: [
+      { string: 2, rel: 1, note: "third" as const },
+      { string: 3, rel: 0, note: "fifth" as const },
+      { string: 4, rel: 1, note: "root" as const },
+    ],
+  },
+  {
+    type: "2nd" as const,
+    lowestRel: 4,
+    dots: [
+      { string: 2, rel: 5, note: "fifth" as const },
+      { string: 3, rel: 5, note: "root" as const },
+      { string: 4, rel: 4, note: "third" as const },
+    ],
+  },
+  {
+    type: "root" as const,
+    lowestRel: 8,
+    dots: [
+      { string: 2, rel: 10, note: "root" as const },
+      { string: 3, rel: 8, note: "third" as const },
+      { string: 4, rel: 8, note: "fifth" as const },
+    ],
+  },
+];
+
 const STRING_GROUPS = [
-  { label: "E-A-D", strings: new Set([0, 1, 2]), shapes: INV_SHAPES_EAD },
-  { label: "A-D-G", strings: new Set([1, 2, 3]), shapes: INV_SHAPES_ADG },
-  { label: "D-G-B", strings: new Set([2, 3, 4]), shapes: INV_SHAPES_DGB },
-  { label: "G-B-e", strings: new Set([3, 4, 5]), shapes: INV_SHAPES_GBE },
+  { label: "E-A-D", strings: new Set([0, 1, 2]), major: INV_SHAPES_EAD, minor: INV_SHAPES_EAD_MINOR },
+  { label: "A-D-G", strings: new Set([1, 2, 3]), major: INV_SHAPES_ADG, minor: INV_SHAPES_ADG_MINOR },
+  { label: "D-G-B", strings: new Set([2, 3, 4]), major: INV_SHAPES_DGB, minor: INV_SHAPES_DGB_MINOR },
+  { label: "G-B-e", strings: new Set([3, 4, 5]), major: INV_SHAPES_GBE, minor: INV_SHAPES_GBE_MINOR },
 ];
 
 type InvType = "root" | "1st" | "2nd";
 
 type InvShape = typeof INV_SHAPES_GBE;
 
-function computeInversions(rootIndex: number, shapes: InvShape) {
-  const { root, third, fifth } = getMajorTriad(rootIndex);
+function computeInversions(rootIndex: number, shapes: InvShape, minor = false) {
+  const { root, third, fifth } = minor ? getMinorTriad(rootIndex) : getMajorTriad(rootIndex);
   const noteNames = { root, third, fifth };
 
   const groups = shapes.map((shape) => {
@@ -373,10 +506,11 @@ interface InvFretboardProps {
   rootIndex: number;
   shapes: InvShape;
   activeStrings: Set<number>;
+  minor?: boolean;
 }
 
-function InversionFretboard({ rootIndex, shapes, activeStrings }: InvFretboardProps) {
-  const { allDots, labels } = computeInversions(rootIndex, shapes);
+function InversionFretboard({ rootIndex, shapes, activeStrings, minor = false }: InvFretboardProps) {
+  const { allDots, labels } = computeInversions(rootIndex, shapes, minor);
 
   const svgW = H_PAD_L + H_SPAN * H_FRET_GAP + H_PAD_R;
   const svgH = H_PAD_T + 5 * H_STRING_GAP + H_PAD_B;
@@ -608,7 +742,10 @@ export function TriadShapesContent() {
           </button>
         ))}
       </div>
-      <InversionFretboard rootIndex={rootIndex} shapes={group.shapes} activeStrings={group.strings} />
+      <h3 className="shapes-heading">Major</h3>
+      <InversionFretboard rootIndex={rootIndex} shapes={group.major} activeStrings={group.strings} />
+      <h3 className="shapes-heading">Minor</h3>
+      <InversionFretboard rootIndex={rootIndex} shapes={group.minor} activeStrings={group.strings} minor />
     </div>
   );
 }
