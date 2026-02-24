@@ -85,28 +85,91 @@ const MINOR_SHAPES: ShapeData[] = [
   },
 ];
 
-/* ── Horizontal C major inversion fretboard ── */
+/* ── Horizontal inversion fretboard ── */
 
-const C_MAJOR_FRETBOARD: Dot[] = [
-  // 2nd inversion (frets 0–1)
-  { string: 3, fret: 0, label: "G", isRoot: false },
-  { string: 4, fret: 1, label: "C", isRoot: true },
-  { string: 5, fret: 0, label: "E", isRoot: false },
-  // Root position (frets 3–5)
-  { string: 3, fret: 5, label: "C", isRoot: true },
-  { string: 4, fret: 5, label: "E", isRoot: false },
-  { string: 5, fret: 3, label: "G", isRoot: false },
-  // 1st inversion (frets 8–9)
-  { string: 3, fret: 9, label: "E", isRoot: false },
-  { string: 4, fret: 8, label: "G", isRoot: false },
-  { string: 5, fret: 8, label: "C", isRoot: true },
+const NOTES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const FRET_MARKERS = [3, 5, 7, 9, 12, 15, 17, 19, 21];
+
+function getMajorTriad(rootIndex: number) {
+  const root  = NOTES[rootIndex];
+  const third = NOTES[(rootIndex + 4) % 12];
+  const fifth = NOTES[(rootIndex + 7) % 12];
+  return { root, third, fifth };
+}
+
+// Relative dot positions for each inversion (relative to root offset)
+const INV_SHAPES = [
+  {
+    type: "2nd" as const,
+    lowestRel: 0,
+    dots: [
+      { string: 3, rel: 0, note: "fifth" as const },
+      { string: 4, rel: 1, note: "root" as const },
+      { string: 5, rel: 0, note: "third" as const },
+    ],
+  },
+  {
+    type: "root" as const,
+    lowestRel: 3,
+    dots: [
+      { string: 3, rel: 5, note: "root" as const },
+      { string: 4, rel: 5, note: "third" as const },
+      { string: 5, rel: 3, note: "fifth" as const },
+    ],
+  },
+  {
+    type: "1st" as const,
+    lowestRel: 8,
+    dots: [
+      { string: 3, rel: 9, note: "third" as const },
+      { string: 4, rel: 8, note: "fifth" as const },
+      { string: 5, rel: 8, note: "root" as const },
+    ],
+  },
 ];
 
-const INV_LABELS = [
-  { name: "2nd inv — C/G", fretMin: 0, fretMax: 1 },
-  { name: "Root — C", fretMin: 3, fretMax: 5 },
-  { name: "1st inv — C/E", fretMin: 8, fretMax: 9 },
-];
+type InvType = "root" | "1st" | "2nd";
+
+function computeInversions(rootIndex: number) {
+  const { root, third, fifth } = getMajorTriad(rootIndex);
+  const noteNames = { root, third, fifth };
+
+  const groups = INV_SHAPES.map((shape) => {
+    const absLowest = rootIndex + shape.lowestRel;
+    const wrap = absLowest >= 12;
+    const shift = wrap ? -12 : 0;
+    const dots: Dot[] = shape.dots.map((d) => ({
+      string: d.string,
+      fret: rootIndex + d.rel + shift,
+      label: noteNames[d.note],
+      isRoot: d.note === "root",
+    }));
+    const frets = dots.map((d) => d.fret);
+    return {
+      type: shape.type as InvType,
+      dots,
+      minFret: Math.min(...frets),
+      maxFret: Math.max(...frets),
+    };
+  });
+
+  groups.sort((a, b) => a.minFret - b.minFret);
+
+  const labelInfo: Record<InvType, string> = {
+    "2nd": `2nd inv — ${root}/${fifth}`,
+    "root": `Root — ${root}`,
+    "1st": `1st inv — ${root}/${third}`,
+  };
+
+  const allDots = groups.flatMap((g) => g.dots);
+  const labels = groups.map((g) => ({
+    name: labelInfo[g.type],
+    fretMin: g.minFret,
+    fretMax: g.maxFret,
+  }));
+
+  return { allDots, labels, root, third, fifth };
+}
 
 const H_FRET_GAP = 46;
 const H_STRING_GAP = 22;
@@ -115,8 +178,6 @@ const H_PAD_L = 14;
 const H_PAD_R = 14;
 const H_PAD_T = 14;
 const H_PAD_B = 38;
-const H_OPEN_W = 22;
-const H_FRET_MAX = 9;
 
 const STRING_COUNT = 6;
 const FRET_ROWS = 6;
@@ -203,20 +264,28 @@ function FretboardDiagram({ shape }: { shape: ShapeData }) {
   );
 }
 
-function InversionFretboard() {
-  const nutX = H_PAD_L + H_OPEN_W;
-  const svgW = nutX + H_FRET_MAX * H_FRET_GAP + H_PAD_R;
+const H_START_FRET = 0;
+const H_END_FRET = 13;
+const H_SPAN = H_END_FRET - H_START_FRET;
+
+function InversionFretboard({ rootIndex }: { rootIndex: number }) {
+  const { allDots, labels } = computeInversions(rootIndex);
+
+  const svgW = H_PAD_L + H_SPAN * H_FRET_GAP + H_PAD_R;
   const svgH = H_PAD_T + 5 * H_STRING_GAP + H_PAD_B;
 
   const stringY = (s: number) => H_PAD_T + (5 - s) * H_STRING_GAP;
-  const fretWireX = (f: number) => nutX + f * H_FRET_GAP;
-  const dotCX = (f: number) => nutX + f * H_FRET_GAP; // on the fret wire
-  const fretMidX = (f: number) => nutX + (f - 0.5) * H_FRET_GAP; // center of fret space
+  const fretToX = (f: number) => H_PAD_L + (f - H_START_FRET) * H_FRET_GAP;
+  const fretMidX = (f: number) => fretToX(f) - H_FRET_GAP / 2;
 
   const topY = stringY(5);
   const botY = stringY(0);
   const fretNumY = botY + 16;
   const invLabelY = botY + 28;
+
+  const visibleMarkers = FRET_MARKERS.filter(
+    (f) => f > H_START_FRET && f <= H_END_FRET
+  );
 
   return (
     <svg
@@ -225,21 +294,21 @@ function InversionFretboard() {
       width={svgW}
       height={svgH}
     >
-      {/* Nut */}
-      <line x1={nutX} y1={topY} x2={nutX} y2={botY} stroke="#888" strokeWidth={3} />
-
       {/* Fret wires */}
-      {Array.from({ length: H_FRET_MAX }, (_, i) => (
-        <line
-          key={`fw-${i}`}
-          x1={fretWireX(i + 1)}
-          y1={topY}
-          x2={fretWireX(i + 1)}
-          y2={botY}
-          stroke="#555"
-          strokeWidth={2}
-        />
-      ))}
+      {Array.from({ length: H_SPAN + 1 }, (_, i) => {
+        const absFret = H_START_FRET + i;
+        return (
+          <line
+            key={`fw-${i}`}
+            x1={fretToX(absFret)}
+            y1={topY}
+            x2={fretToX(absFret)}
+            y2={botY}
+            stroke={absFret === 0 ? "#888" : "#555"}
+            strokeWidth={absFret === 0 ? 3 : 2}
+          />
+        );
+      })}
 
       {/* String lines */}
       {Array.from({ length: STRING_COUNT }, (_, i) => (
@@ -247,44 +316,56 @@ function InversionFretboard() {
           key={`s-${i}`}
           x1={H_PAD_L}
           y1={stringY(i)}
-          x2={fretWireX(H_FRET_MAX)}
+          x2={fretToX(H_END_FRET)}
           y2={stringY(i)}
           stroke={i < 3 ? "#333" : "#666"}
-          strokeWidth={1 < 3 ? 2 : 1}
+          strokeWidth={i < 3 ? 2 : 1}
         />
       ))}
 
       {/* Fret marker dots (inlays) */}
-      {[3, 5, 7, 9].map((f) => (
-        <circle
-          key={`marker-${f}`}
-          cx={fretMidX(f)}
-          cy={(topY + botY) / 2}
-          r={4}
-          fill="#727272"
-        />
-      ))}
+      {visibleMarkers.map((f) => {
+        const mx = fretMidX(f);
+        const midY = (topY + botY) / 2;
+        if (f === 12) {
+          // Double dot: between G & B strings, and between A & D strings
+          const upperY = (stringY(3) + stringY(4)) / 2;
+          const lowerY = (stringY(1) + stringY(2)) / 2;
+          return (
+            <g key={`marker-${f}`}>
+              <circle cx={mx} cy={upperY} r={4} fill="#727272" />
+              <circle cx={mx} cy={lowerY} r={4} fill="#727272" />
+            </g>
+          );
+        }
+        return (
+          <circle key={`marker-${f}`} cx={mx} cy={midY} r={4} fill="#727272" />
+        );
+      })}
 
       {/* Fret numbers */}
-      {Array.from({ length: H_FRET_MAX + 1 }, (_, f) => (
-        <text
-          key={`fn-${f}`}
-          x={dotCX(f)}
-          y={fretNumY}
-          textAnchor="middle"
-          fill="#555"
-          fontSize={9}
-          fontFamily="system-ui, sans-serif"
-        >
-          {f}
-        </text>
-      ))}
+      {Array.from({ length: H_SPAN + 1 }, (_, i) => {
+        const absFret = H_START_FRET + i;
+        return (
+          <text
+            key={`fn-${absFret}`}
+            x={fretToX(absFret)}
+            y={fretNumY}
+            textAnchor="middle"
+            fill="#555"
+            fontSize={9}
+            fontFamily="system-ui, sans-serif"
+          >
+            {absFret}
+          </text>
+        );
+      })}
 
       {/* Inversion labels */}
-      {INV_LABELS.map((inv) => (
+      {labels.map((inv) => (
         <text
           key={inv.name}
-          x={(dotCX(inv.fretMin) + dotCX(inv.fretMax)) / 2}
+          x={(fretToX(inv.fretMin) + fretToX(inv.fretMax)) / 2}
           y={invLabelY}
           textAnchor="middle"
           fill="#e8a43a"
@@ -296,8 +377,8 @@ function InversionFretboard() {
       ))}
 
       {/* Dots */}
-      {C_MAJOR_FRETBOARD.map((dot, i) => {
-        const cx = dotCX(dot.fret);
+      {allDots.map((dot, i) => {
+        const cx = fretToX(dot.fret);
         const cy = stringY(dot.string);
         return (
           <g key={i}>
@@ -330,7 +411,10 @@ function InversionFretboard() {
 
 export function TriadShapes() {
   const [open, setOpen] = useState(false);
+  const [rootIndex, setRootIndex] = useState(0);
   const collapseRef = useRef<HTMLDivElement>(null);
+
+  const { root, third, fifth } = getMajorTriad(rootIndex);
 
   const toggle = () => {
     const willOpen = !open;
@@ -361,14 +445,25 @@ export function TriadShapes() {
             determines the <em>inversion</em>:
           </p>
           <ul className="inversions-list">
-            <li><strong>Root position</strong> — root on the bottom (C–E–G), written as <strong>C</strong></li>
-            <li><strong>1st inversion</strong> — 3rd on the bottom (E–G–C), written as <strong>C/E</strong></li>
-            <li><strong>2nd inversion</strong> — 5th on the bottom (G–C–E), written as <strong>C/G</strong></li>
+            <li><strong>Root position</strong> — root on the bottom ({root}–{third}–{fifth}), written as <strong>{root}</strong></li>
+            <li><strong>1st inversion</strong> — 3rd on the bottom ({third}–{fifth}–{root}), written as <strong>{root}/{third}</strong></li>
+            <li><strong>2nd inversion</strong> — 5th on the bottom ({fifth}–{root}–{third}), written as <strong>{root}/{fifth}</strong></li>
           </ul>
           <p className="inversions-text">
-            Here are all three inversions of C major on the G–B–e strings:
+            Here are all three inversions of {root} major on the G–B–e strings:
           </p>
-          <InversionFretboard />
+          <div className="note-selector">
+            {NOTES.map((note, i) => (
+              <button
+                key={note}
+                className={`note-btn${i === rootIndex ? " active" : ""}`}
+                onClick={() => setRootIndex(i)}
+              >
+                {note}
+              </button>
+            ))}
+          </div>
+          <InversionFretboard rootIndex={rootIndex} />
           <p className="inversions-text inversions-bridge">
             The full shapes below show how these inversions connect across all six strings.
           </p>
