@@ -160,6 +160,75 @@ const INV_SHAPES_EAD = [
   },
 ];
 
+// A–D–G strings (strings 1, 2, 3): A→D is P4, D→G is P4
+const INV_SHAPES_ADG = [
+  {
+    type: "root" as const,
+    lowestRel: 0,
+    dots: [
+      { string: 1, rel: 3, note: "root" as const },
+      { string: 2, rel: 2, note: "third" as const },
+      { string: 3, rel: 0, note: "fifth" as const },
+    ],
+  },
+  {
+    type: "1st" as const,
+    lowestRel: 5,
+    dots: [
+      { string: 1, rel: 7, note: "third" as const },
+      { string: 2, rel: 5, note: "fifth" as const },
+      { string: 3, rel: 5, note: "root" as const },
+    ],
+  },
+  {
+    type: "2nd" as const,
+    lowestRel: 9,
+    dots: [
+      { string: 1, rel: 10, note: "fifth" as const },
+      { string: 2, rel: 10, note: "root" as const },
+      { string: 3, rel: 9, note: "third" as const },
+    ],
+  },
+];
+
+// D–G–B strings (strings 2, 3, 4): D→G is P4, G→B is M3
+const INV_SHAPES_DGB = [
+  {
+    type: "1st" as const,
+    lowestRel: 0,
+    dots: [
+      { string: 2, rel: 2, note: "third" as const },
+      { string: 3, rel: 0, note: "fifth" as const },
+      { string: 4, rel: 1, note: "root" as const },
+    ],
+  },
+  {
+    type: "2nd" as const,
+    lowestRel: 5,
+    dots: [
+      { string: 2, rel: 5, note: "fifth" as const },
+      { string: 3, rel: 5, note: "root" as const },
+      { string: 4, rel: 5, note: "third" as const },
+    ],
+  },
+  {
+    type: "root" as const,
+    lowestRel: 8,
+    dots: [
+      { string: 2, rel: 10, note: "root" as const },
+      { string: 3, rel: 9, note: "third" as const },
+      { string: 4, rel: 8, note: "fifth" as const },
+    ],
+  },
+];
+
+const STRING_GROUPS = [
+  { label: "E-A-D", strings: new Set([0, 1, 2]), shapes: INV_SHAPES_EAD },
+  { label: "A-D-G", strings: new Set([1, 2, 3]), shapes: INV_SHAPES_ADG },
+  { label: "D-G-B", strings: new Set([2, 3, 4]), shapes: INV_SHAPES_DGB },
+  { label: "G-B-e", strings: new Set([3, 4, 5]), shapes: INV_SHAPES_GBE },
+];
+
 type InvType = "root" | "1st" | "2nd";
 
 type InvShape = typeof INV_SHAPES_GBE;
@@ -487,13 +556,7 @@ export function InversionsContent() {
       <p className="inversions-text">
         Any other combination of strings will work as well!
       </p>
-    </div>
-  );
-}
 
-export function TriadShapesContent() {
-  return (
-    <div className="triad-shapes-content">
       <h3 className="shapes-heading">Major</h3>
       <div className="shapes-row">
         {MAJOR_SHAPES.map((shape) => (
@@ -512,6 +575,44 @@ export function TriadShapesContent() {
         These shapes are movable — slide up or down the neck to change key.
         Root notes are highlighted.
       </p>
+    </div>
+  );
+}
+
+export function TriadShapesContent() {
+  const [rootIndex, setRootIndex] = useState(0);
+  const [groupIndex, setGroupIndex] = useState(3); // default G-B-e
+
+  const group = STRING_GROUPS[groupIndex];
+
+  return (
+    <div className="triad-shapes-content">
+      <p className="inversions-text">
+        Pick a root and string group to see all three inversions.
+      </p>
+      <div className="string-group-selector">
+        {STRING_GROUPS.map((g, i) => (
+          <button
+            key={g.label}
+            className={`string-group-btn${i === groupIndex ? " active" : ""}`}
+            onClick={() => setGroupIndex(i)}
+          >
+            {g.label}
+          </button>
+        ))}
+      </div>
+      <div className="note-selector">
+        {NOTES.map((note, i) => (
+          <button
+            key={note}
+            className={`note-btn${i === rootIndex ? " active" : ""}`}
+            onClick={() => setRootIndex(i)}
+          >
+            {note}
+          </button>
+        ))}
+      </div>
+      <InversionFretboard rootIndex={rootIndex} shapes={group.shapes} activeStrings={group.strings} />
     </div>
   );
 }

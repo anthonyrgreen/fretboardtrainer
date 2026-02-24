@@ -16,34 +16,41 @@ describe("InversionsContent", () => {
     expect(screen.getByText(/G–B–e strings/)).toBeInTheDocument();
     expect(screen.getByText(/D–A–E strings/)).toBeInTheDocument();
   });
+
+  it("renders major and minor shape diagrams", () => {
+    render(<InversionsContent />);
+    expect(screen.getByText("Major")).toBeInTheDocument();
+    expect(screen.getByText("Minor")).toBeInTheDocument();
+    expect(screen.getAllByText("Shape 1")).toHaveLength(2);
+    expect(screen.getByText(/These shapes are movable/)).toBeInTheDocument();
+  });
 });
 
 describe("TriadShapesContent", () => {
-  it("contains all shape titles for both qualities", () => {
+  it("renders string group selector with all groups", () => {
     render(<TriadShapesContent />);
-    // 2 of each (major + minor)
-    expect(screen.getAllByText("Shape 1")).toHaveLength(2);
-    expect(screen.getAllByText("Shape 2")).toHaveLength(2);
-    expect(screen.getAllByText("Shape 3")).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "E-A-D" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "A-D-G" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "D-G-B" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "G-B-e" })).toBeInTheDocument();
   });
 
-  it("renders fretboard diagrams with interval labels", () => {
+  it("renders note selector", () => {
     render(<TriadShapesContent />);
-    // Each shape has 2 roots = 6 per quality × 2 qualities = 12 total
-    const roots = screen.getAllByText("R");
-    expect(roots.length).toBe(12);
+    expect(screen.getByRole("button", { name: "C" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "F#" })).toBeInTheDocument();
   });
 
-  it("renders both major and minor sections", () => {
+  it("renders inversion fretboard with labels", () => {
     render(<TriadShapesContent />);
-    expect(screen.getByText("Major")).toBeInTheDocument();
-    expect(screen.getByText("Minor")).toBeInTheDocument();
+    expect(screen.getByText(/Root — C/)).toBeInTheDocument();
+    expect(screen.getByText(/1st inv/)).toBeInTheDocument();
+    expect(screen.getByText(/2nd inv/)).toBeInTheDocument();
   });
 
-  it("renders the movable shapes note", () => {
+  it("defaults to G-B-e string group", () => {
     render(<TriadShapesContent />);
-    expect(
-      screen.getByText(/These shapes are movable/)
-    ).toBeInTheDocument();
+    const gbeBtn = screen.getByRole("button", { name: "G-B-e" });
+    expect(gbeBtn.className).toContain("active");
   });
 });
