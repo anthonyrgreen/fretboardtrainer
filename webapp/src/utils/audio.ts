@@ -1,4 +1,5 @@
 let audioCtx: AudioContext | null = null;
+let unlocked = false;
 
 function getAudioContext(): AudioContext {
   if (!audioCtx) {
@@ -6,6 +7,27 @@ function getAudioContext(): AudioContext {
   }
   return audioCtx;
 }
+
+// iOS (Safari and Chrome) requires AudioContext to be created and resumed
+// inside a direct user gesture. Call this once on the first touchstart/click
+// to unlock audio for the lifetime of the page.
+function unlockAudio() {
+  if (unlocked) return;
+  const ctx = getAudioContext();
+  if (ctx.state === "suspended") {
+    ctx.resume();
+  }
+  // Play a silent buffer to fully unlock on iOS
+  const buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(ctx.destination);
+  source.start();
+  unlocked = true;
+}
+
+document.addEventListener("touchstart", unlockAudio, { once: true });
+document.addEventListener("click", unlockAudio, { once: true });
 
 export function playClick(accent: boolean): void {
   const ctx = getAudioContext();

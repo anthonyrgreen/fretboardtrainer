@@ -133,6 +133,19 @@ export function useMetronome(
     measureRef.current = 0;
   }, [stopInterval]);
 
+  // iOS suspends setInterval and AudioContext when backgrounded, and
+  // ctx.resume() requires a user gesture to re-unlock. Auto-pause so the
+  // user can tap Resume (a real gesture) when they return.
+  useEffect(() => {
+    const onHidden = () => {
+      if (document.visibilityState === "hidden" && playState === "playing") {
+        pause();
+      }
+    };
+    document.addEventListener("visibilitychange", onHidden);
+    return () => document.removeEventListener("visibilitychange", onHidden);
+  }, [playState, pause]);
+
   useEffect(() => {
     return () => stopInterval();
   }, [stopInterval]);
