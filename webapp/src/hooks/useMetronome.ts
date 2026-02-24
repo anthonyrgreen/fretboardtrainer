@@ -32,6 +32,17 @@ export function useMetronome(
   const beatsPerMeasureRef = useRef(beatsPerMeasure);
   const pausedAtRef = useRef(0);
 
+  // When BPM changes mid-playback, reanchor nextBeatTime to preserve
+  // the fraction of the current beat that has already elapsed.
+  if (bpm !== bpmRef.current && playState === "playing") {
+    const now = performance.now();
+    const oldMsPerBeat = 60000 / bpmRef.current;
+    const newMsPerBeat = 60000 / bpm;
+    const timeUntilNextBeat = nextBeatTimeRef.current - now;
+    const fraction = Math.max(0, Math.min(1, 1 - timeUntilNextBeat / oldMsPerBeat));
+    nextBeatTimeRef.current = now + (1 - fraction) * newMsPerBeat;
+  }
+
   bpmRef.current = bpm;
   beatsPerMeasureRef.current = beatsPerMeasure;
 

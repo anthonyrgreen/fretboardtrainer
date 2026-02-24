@@ -33,6 +33,30 @@ export function ScrollingStaff({
   const currentMeasureRef = useRef(currentMeasure);
   const beatsPerMeasureRef = useRef(beatsPerMeasure);
   const lastBeatTimeRef = useRef(0);
+  const prevPlayStateRef = useRef(playState);
+  const pausedAtRef = useRef(0);
+
+  // When pausing/resuming, shift lastBeatTime so the interpolation
+  // fraction doesn't include the pause duration.
+  if (playState !== prevPlayStateRef.current) {
+    if (playState === "paused") {
+      pausedAtRef.current = performance.now();
+    } else if (playState === "playing" && prevPlayStateRef.current === "paused") {
+      lastBeatTimeRef.current += performance.now() - pausedAtRef.current;
+    }
+    prevPlayStateRef.current = playState;
+  }
+
+  // When BPM changes, reanchor lastBeatTime so the interpolation
+  // fraction is preserved (prevents backwards scroll or jumps).
+  if (bpm !== bpmRef.current && bpmRef.current > 0) {
+    const now = performance.now();
+    const oldMsPerBeat = 60000 / bpmRef.current;
+    const newMsPerBeat = 60000 / bpm;
+    const timeSinceBeat = now - lastBeatTimeRef.current;
+    const fraction = Math.min(timeSinceBeat / oldMsPerBeat, 1);
+    lastBeatTimeRef.current = now - fraction * newMsPerBeat;
+  }
 
   bpmRef.current = bpm;
   beatsPerMeasureRef.current = beatsPerMeasure;
