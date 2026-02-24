@@ -4,6 +4,7 @@ import { ScrollingStaff } from "./components/ScrollingStaff";
 import { useMetronome } from "./hooks/useMetronome";
 import { useExercise } from "./hooks/useExercise";
 import { Guide } from "./components/Guide";
+import { TriadShapes } from "./components/TriadShapes";
 import "./App.css";
 
 const DEFAULT_SETTINGS: SettingsValues = {
@@ -91,6 +92,7 @@ function App() {
       </button>
 
       <Guide />
+      <TriadShapes />
     </div>
   );
 }

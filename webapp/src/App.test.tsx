@@ -64,7 +64,7 @@ describe("App", () => {
     render(<App />);
 
     expect(screen.getByText("Measure pattern")).toBeInTheDocument();
-    expect(screen.getByText("Root")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Root" })).toBeInTheDocument();
   });
 
   it("settings are not disabled in idle state", () => {

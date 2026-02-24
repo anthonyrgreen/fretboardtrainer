@@ -74,4 +74,12 @@ test.describe("Visual regression", () => {
     const guide = page.locator(".guide");
     await expect(guide).toHaveScreenshot("guide-expanded.png");
   });
+
+  test("triad shapes expanded", async ({ page }) => {
+    await page.click("text=Triad shapes");
+    await page.waitForTimeout(400);
+
+    const shapes = page.locator(".triad-shapes");
+    await expect(shapes).toHaveScreenshot("triad-shapes-expanded.png");
+  });
 });

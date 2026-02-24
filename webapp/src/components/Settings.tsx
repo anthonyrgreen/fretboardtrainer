@@ -56,7 +56,7 @@ export function Settings({ values, onChange, disableStructure }: SettingsProps) 
           id="bpm"
           type="range"
           min={10}
-          max={200}
+          max={120}
           value={values.bpm}
           onChange={(e) => update("bpm", Number(e.target.value))}
           disabled={false}

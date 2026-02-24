@@ -1,0 +1,129 @@
+.triad-shapes {
+  width: 100%;
+  max-width: 640px;
+}
+
+.triad-shapes-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  font-size: 14px;
+  color: #888;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  user-select: none;
+}
+
+.triad-shapes-toggle:hover {
+  color: #ccc;
+}
+
+.triad-shapes-arrow {
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.triad-shapes-arrow.open {
+  transform: rotate(90deg);
+}
+
+.triad-shapes-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.35s ease;
+}
+
+.triad-shapes-collapse.open {
+  grid-template-rows: 1fr;
+}
+
+.triad-shapes-content {
+  overflow: hidden;
+  padding-top: 0;
+  transition: padding-top 0.35s ease;
+}
+
+.triad-shapes-collapse.open > .triad-shapes-content {
+  padding-top: 16px;
+}
+
+.shapes-heading {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e8a43a;
+  text-align: center;
+  margin: 16px 0 8px;
+}
+
+.shapes-heading:first-child {
+  margin-top: 0;
+}
+
+.shapes-row {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.shape-diagram {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.shape-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ccc;
+  margin: 0;
+}
+
+.fretboard-svg {
+  display: block;
+}
+
+.inversions-text {
+  font-size: 14px;
+  color: #aaa;
+  text-align: center;
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.inversions-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px auto;
+  font-size: 14px;
+  color: #aaa;
+  width: fit-content;
+}
+
+.inversions-list li {
+  margin: 4px 0;
+}
+
+.inversions-list strong {
+  color: #ccc;
+}
+
+.inversions-bridge {
+  margin-top: 16px;
+}
+
+.inversion-fretboard {
+  display: block;
+  margin: 8px auto 0;
+}
+
+.shapes-note {
+  font-size: 13px;
+  color: #666;
+  text-align: center;
+  margin: 16px 0 0;
+}
