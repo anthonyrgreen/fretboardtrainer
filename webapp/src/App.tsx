@@ -3,6 +3,7 @@ import { Settings, type SettingsValues } from "./components/Settings";
 import { ScrollingStaff } from "./components/ScrollingStaff";
 import { useMetronome } from "./hooks/useMetronome";
 import { useExercise } from "./hooks/useExercise";
+import { Guide } from "./components/Guide";
 import "./App.css";
 
 const DEFAULT_SETTINGS: SettingsValues = {
@@ -88,6 +89,8 @@ function App() {
       >
         {muted ? "Unmute" : "Mute"}
       </button>
+
+      <Guide />
     </div>
   );
 }

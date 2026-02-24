@@ -65,4 +65,13 @@ test.describe("Visual regression", () => {
     const staff = page.locator(".staff-container");
     await expect(staff).toHaveScreenshot("staff-5-beats.png");
   });
+
+  test("guide expanded", async ({ page }) => {
+    await page.click("text=How to use");
+    // Wait for slide animation to finish
+    await page.waitForTimeout(400);
+
+    const guide = page.locator(".guide");
+    await expect(guide).toHaveScreenshot("guide-expanded.png");
+  });
 });
