@@ -1,25 +1,20 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { Guide } from "./Guide";
+import { GuideContent } from "./Guide";
 
-describe("Guide", () => {
-  it("renders the toggle text", () => {
-    render(<Guide />);
-    expect(screen.getByText("How to use")).toBeInTheDocument();
-  });
-
+describe("GuideContent", () => {
   it("contains the what-is-this section", () => {
-    render(<Guide />);
+    render(<GuideContent />);
     expect(screen.getByText("What is this?")).toBeInTheDocument();
   });
 
   it("contains the getting-started section", () => {
-    render(<Guide />);
+    render(<GuideContent />);
     expect(screen.getByText("Getting started")).toBeInTheDocument();
   });
 
   it("contains the tips section", () => {
-    render(<Guide />);
+    render(<GuideContent />);
     expect(screen.getByText("Tips")).toBeInTheDocument();
   });
 });

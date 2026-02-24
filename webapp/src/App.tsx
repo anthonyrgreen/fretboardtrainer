@@ -3,8 +3,7 @@ import { Settings, type SettingsValues } from "./components/Settings";
 import { ScrollingStaff } from "./components/ScrollingStaff";
 import { useMetronome } from "./hooks/useMetronome";
 import { useExercise } from "./hooks/useExercise";
-import { Guide } from "./components/Guide";
-import { TriadShapes } from "./components/TriadShapes";
+import { InfoBar } from "./components/InfoBar";
 import "./App.css";
 
 const DEFAULT_SETTINGS: SettingsValues = {
@@ -48,6 +47,8 @@ function App() {
     <div className="app">
       <h1 className="title">Triad trainer</h1>
 
+      <InfoBar />
+
       <ScrollingStaff
         bpm={settings.bpm}
         beatsPerMeasure={beatsPerMeasure}
@@ -90,9 +91,6 @@ function App() {
       >
         {muted ? "Unmute" : "Mute"}
       </button>
-
-      <Guide />
-      <TriadShapes />
     </div>
   );
 }

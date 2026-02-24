@@ -1,54 +1,7 @@
-.triad-shapes {
+.triad-shapes-content {
   width: 100%;
   max-width: 640px;
-}
-
-.triad-shapes-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  font-size: 14px;
-  color: #888;
-  cursor: pointer;
-  background: none;
-  border: none;
-  padding: 4px 0;
-  user-select: none;
-}
-
-.triad-shapes-toggle:hover {
-  color: #ccc;
-}
-
-.triad-shapes-arrow {
-  display: inline-block;
-  transition: transform 0.3s ease;
-}
-
-.triad-shapes-arrow.open {
-  transform: rotate(90deg);
-}
-
-.triad-shapes-collapse {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.35s ease;
-}
-
-.triad-shapes-collapse.open {
-  grid-template-rows: 1fr;
-}
-
-.triad-shapes-content {
-  overflow: hidden;
-  padding-top: 0;
-  transition: padding-top 0.35s ease;
-}
-
-.triad-shapes-collapse.open > .triad-shapes-content {
-  padding-top: 16px;
+  margin: 0 auto;
 }
 
 .shapes-heading {

@@ -1,57 +1,7 @@
-.guide {
-  width: 100%;
-  max-width: 480px;
-}
-
-.guide-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  font-size: 14px;
-  color: #888;
-  cursor: pointer;
-  background: none;
-  border: none;
-  padding: 4px 0;
-  user-select: none;
-}
-
-.guide-toggle:hover {
-  color: #ccc;
-}
-
-.guide-arrow {
-  display: inline-block;
-  transition: transform 0.3s ease;
-}
-
-.guide-arrow.open {
-  transform: rotate(90deg);
-}
-
-.guide-collapse {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.35s ease;
-}
-
-.guide-collapse.open {
-  grid-template-rows: 1fr;
-}
-
 .guide-content {
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding-top: 0;
-  transition: padding-top 0.35s ease;
-}
-
-.guide-collapse.open > .guide-content {
-  padding-top: 16px;
 }
 
 .guide-content h3 {

@@ -71,15 +71,15 @@ test.describe("Visual regression", () => {
     // Wait for slide animation to finish
     await page.waitForTimeout(400);
 
-    const guide = page.locator(".guide");
-    await expect(guide).toHaveScreenshot("guide-expanded.png");
+    const infoBar = page.locator(".info-bar");
+    await expect(infoBar).toHaveScreenshot("guide-expanded.png");
   });
 
-  test("triad shapes expanded", async ({ page }) => {
-    await page.click("text=Triad shapes");
+  test("understanding inversions expanded", async ({ page }) => {
+    await page.click("text=Understanding inversions");
     await page.waitForTimeout(400);
 
-    const shapes = page.locator(".triad-shapes");
-    await expect(shapes).toHaveScreenshot("triad-shapes-expanded.png");
+    const infoBar = page.locator(".info-bar");
+    await expect(infoBar).toHaveScreenshot("inversions-expanded.png");
   });
 });

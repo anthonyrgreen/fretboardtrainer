@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import "./TriadShapes.css";
 
 interface Dot {
@@ -449,90 +449,69 @@ function InversionFretboard({ rootIndex, shapes, activeStrings }: InvFretboardPr
   );
 }
 
-export function TriadShapes() {
-  const [open, setOpen] = useState(false);
+export function InversionsContent() {
   const [rootIndex, setRootIndex] = useState(0);
-  const collapseRef = useRef<HTMLDivElement>(null);
-  const toggleRef = useRef<HTMLButtonElement>(null);
 
   const { root, third, fifth } = getMajorTriad(rootIndex);
 
-  const toggle = () => {
-    const willOpen = !open;
-    setOpen(willOpen);
-    if (willOpen) {
-      collapseRef.current?.addEventListener(
-        "transitionend",
-        () => {
-          toggleRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-        },
-        { once: true }
-      );
-    }
-  };
-
   return (
-    <div className="triad-shapes">
-      <button ref={toggleRef} className="triad-shapes-toggle" onClick={toggle}>
-        <span className={`triad-shapes-arrow${open ? " open" : ""}`}>&#x25B8;</span>
-        Triad shapes
-      </button>
-
-      <div ref={collapseRef} className={`triad-shapes-collapse${open ? " open" : ""}`}>
-        <div className="triad-shapes-content">
-          <h3 className="shapes-heading">Understanding inversions</h3>
-          <p className="inversions-text">
-            A triad has three notes. The order they're stacked in
-            determines the <em>inversion</em>:
-          </p>
-          <ul className="inversions-list">
-            <li><strong>Root position</strong> — root on the bottom ({root}–{third}–{fifth}), written as <strong>{root}</strong></li>
-            <li><strong>1st inversion</strong> — 3rd on the bottom ({third}–{fifth}–{root}), written as <strong>{root}/{third}</strong></li>
-            <li><strong>2nd inversion</strong> — 5th on the bottom ({fifth}–{root}–{third}), written as <strong>{root}/{fifth}</strong></li>
-          </ul>
-          <p className="inversions-text">
-            Here are all three inversions of {root} major on the G–B–e strings:
-          </p>
-          <div className="note-selector">
-            {NOTES.map((note, i) => (
-              <button
-                key={note}
-                className={`note-btn${i === rootIndex ? " active" : ""}`}
-                onClick={() => setRootIndex(i)}
-              >
-                {note}
-              </button>
-            ))}
-          </div>
-          <InversionFretboard rootIndex={rootIndex} shapes={INV_SHAPES_GBE} activeStrings={new Set([3, 4, 5])} />
-          <p className="inversions-text">
-            But these inversions could also be played on the D–A–E strings:
-          </p>
-          <InversionFretboard rootIndex={rootIndex} shapes={INV_SHAPES_EAD} activeStrings={new Set([0, 1, 2])} />
-          <p className="inversions-text inversions-bridge">
-            The full shapes below show how these inversions connect across all six strings.
-          </p>
-
-          <h3 className="shapes-heading">Major</h3>
-          <div className="shapes-row">
-            {MAJOR_SHAPES.map((shape) => (
-              <FretboardDiagram key={`maj-${shape.name}`} shape={shape} />
-            ))}
-          </div>
-
-          <h3 className="shapes-heading">Minor</h3>
-          <div className="shapes-row">
-            {MINOR_SHAPES.map((shape) => (
-              <FretboardDiagram key={`min-${shape.name}`} shape={shape} />
-            ))}
-          </div>
-
-          <p className="shapes-note">
-            These shapes are movable — slide up or down the neck to change key.
-            Root notes are highlighted.
-          </p>
-        </div>
+    <div className="triad-shapes-content">
+      <p className="inversions-text">
+        A triad has three notes. The order they're stacked in
+        determines the <em>inversion</em>:
+      </p>
+      <ul className="inversions-list">
+        <li><strong>Root position</strong> — root on the bottom ({root}–{third}–{fifth}), written as <strong>{root}</strong></li>
+        <li><strong>1st inversion</strong> — 3rd on the bottom ({third}–{fifth}–{root}), written as <strong>{root}/{third}</strong></li>
+        <li><strong>2nd inversion</strong> — 5th on the bottom ({fifth}–{root}–{third}), written as <strong>{root}/{fifth}</strong></li>
+      </ul>
+      <p className="inversions-text">
+        Here are all three inversions of {root} major on the G–B–e strings:
+      </p>
+      <div className="note-selector">
+        {NOTES.map((note, i) => (
+          <button
+            key={note}
+            className={`note-btn${i === rootIndex ? " active" : ""}`}
+            onClick={() => setRootIndex(i)}
+          >
+            {note}
+          </button>
+        ))}
       </div>
+      <InversionFretboard rootIndex={rootIndex} shapes={INV_SHAPES_GBE} activeStrings={new Set([3, 4, 5])} />
+      <p className="inversions-text">
+        But these inversions could also be played on the D–A–E strings:
+      </p>
+      <InversionFretboard rootIndex={rootIndex} shapes={INV_SHAPES_EAD} activeStrings={new Set([0, 1, 2])} />
+      <p className="inversions-text">
+        Any other combination of strings will work as well!
+      </p>
+    </div>
+  );
+}
+
+export function TriadShapesContent() {
+  return (
+    <div className="triad-shapes-content">
+      <h3 className="shapes-heading">Major</h3>
+      <div className="shapes-row">
+        {MAJOR_SHAPES.map((shape) => (
+          <FretboardDiagram key={`maj-${shape.name}`} shape={shape} />
+        ))}
+      </div>
+
+      <h3 className="shapes-heading">Minor</h3>
+      <div className="shapes-row">
+        {MINOR_SHAPES.map((shape) => (
+          <FretboardDiagram key={`min-${shape.name}`} shape={shape} />
+        ))}
+      </div>
+
+      <p className="shapes-note">
+        These shapes are movable — slide up or down the neck to change key.
+        Root notes are highlighted.
+      </p>
     </div>
   );
 }
