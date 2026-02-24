@@ -53,7 +53,9 @@ from typing import List, Tuple
 
 FLAGS = flags.FLAGS
 flags.DEFINE_integer('beats_per_measure', 4, 'Number of beats per measure')
-flags.DEFINE_integer('num_measures', 4, 'Number of measures')
+flags.DEFINE_integer('measures_per_exercise', 4, 'Number of measures in a single exercise')
+flags.DEFINE_integer('attempts_per_exercise', 3, 'Number of times to repeat a single exercise')
+flags.DEFINE_integer('rest_measures_before_exercise', 1, 'How many measures to rest before starting an exercise')
 flags.DEFINE_float('bpm', 80, 'Beats per minute')
 
 SECOND_NS = 1000000000.0
@@ -62,58 +64,71 @@ BEATS_PER_MEASURE = 4
 SPACES_BETWEEN_STAFF_ELEMENTS = 3
 
 
+# class Exercise:
+#     def __init__(self, window, attempts_per_exercise, notes_per_attempt, bpm):
+#         self.window = window
+#         self.modes = ['Root', '1st', '2nd']
+#         self.notes = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+#         self.attempts_per_exercise = attempts_per_exercise
+#         self.notes_per_attempt = notes_per_attempt
+#         self.bpm = bpm
+
+#     def get_exercise(self) -> List[Tuple[List[str], str]]:
+#         random.shuffle(self.notes)
+#         return [(self.notes[:self.notes_per_attempt], mode) for mode in self.modes]
+
+#         self.window.addstr('======= {} ======='.format(' '.join(self.notes[:self.notes_per_attempt])))
+#         window.refresh()
+#         time.sleep(1.0)
+#         for i in range(self.attempts_per_exercise):
+#             window.addstr('attempt {}'.format(i))
+#             window.refresh()
+#             for j in range(3):
+#                 window.addstr('* {}'.format(self.modes[j]))
+#                 window.refresh()
+#                 time.sleep(FLAGS.num_measures * FLAGS.beats_per_measure * 60.0 / self.bpm)
+#             if i < self.attempts_per_exercise - 1:
+#                 window.addstr('rest {} measures\n\n'.format(FLAGS.num_measures))
+#                 window.refresh()
+#                 time.sleep(FLAGS.num_measures * FLAGS.beats_per_measure * 60.0 / self.bpm)
+#         window.addstr('\n\n********************\n\n')
+#         window.refresh()
+#         time.sleep(1.0)
+#         window.addstr('rest {} measures\n\n'.format(FLAGS.num_measures))
+#         window.refresh()
+#         time.sleep(FLAGS.num_measures * FLAGS.beats_per_measure * 60.0 / self.bpm)
+#         window.addstr('\n\n********************\n\n')
+#         window.refresh()
+#         time.sleep(1.0)
+
+
 class Exercise:
-    def __init__(self, window, attempts_per_exercise, notes_per_attempt, bpm):
-        self.window = window
-        self.modes = ['Root', '1st', '2nd']
+    def __init__(self, beat_staff, measures_and_beats):
+        self.beat_staff = beat_staff
         self.notes = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
-        self.attempts_per_exercise = attempts_per_exercise
-        self.notes_per_attempt = notes_per_attempt
-        self.bpm = bpm
-
-    def get_exercise(self) -> List[Tuple[List[str], str]]:
         random.shuffle(self.notes)
-        return [(self.notes[:self.notes_per_attempt], mode) for mode in self.modes]
+        self.note_by_measure_and_beat = {measure_and_beat: self.notes[i % len(self.notes)] for i, measure_and_beat in
+                                         enumerate(measures_and_beats)}
 
-        self.window.addstr('======= {} ======='.format(' '.join(self.notes[:self.notes_per_attempt])))
-        window.refresh()
-        time.sleep(1.0)
-        for i in range(self.attempts_per_exercise):
-            window.addstr('attempt {}'.format(i))
-            window.refresh()
-            for j in range(3):
-                window.addstr('* {}'.format(self.modes[j]))
-                window.refresh()
-                time.sleep(FLAGS.num_measures * FLAGS.beats_per_measure * 60.0 / self.bpm)
-            if i < self.attempts_per_exercise - 1:
-                window.addstr('rest {} measures\n\n'.format(FLAGS.num_measures))
-                window.refresh()
-                time.sleep(FLAGS.num_measures * FLAGS.beats_per_measure * 60.0 / self.bpm)
-        window.addstr('\n\n********************\n\n')
-        window.refresh()
-        time.sleep(1.0)
-        window.addstr('rest {} measures\n\n'.format(FLAGS.num_measures))
-        window.refresh()
-        time.sleep(FLAGS.num_measures * FLAGS.beats_per_measure * 60.0 / self.bpm)
-        window.addstr('\n\n********************\n\n')
-        window.refresh()
-        time.sleep(1.0)
+    def display_all_notes(self):
+        for measure_and_beat, note in self.note_by_measure_and_beat.items():
+            self.beat_staff.draw_ch_above_beat(*measure_and_beat, note)
 
+    def display_note_for_measure_and_beat(self, measure, beat):
+        note = self.note_by_measure_and_beat.get((measure, beat))
+        if note:
+            self.beat_staff.draw_ch_above_beat(measure, beat, note)
 
 
 class BeatStaff:
-    def __init__(
-            self,
-            window,
-            y_midpoint,
-            x_midpoint,
-            num_spaces_between_elems,
-            num_measures,
-            num_beats_per_measure):
+    def __init__(self, window, y_midpoint, x_midpoint, num_spaces_between_elems, num_exercise_measures,
+                 num_beats_per_measure,
+                 num_rest_measures):
         self.window = window
         self.num_spaces_between_elems = num_spaces_between_elems
-        self.num_measures = num_measures
+        self.num_exercise_measures = num_exercise_measures
         self.num_beats_per_measure = num_beats_per_measure
+        self.num_rest_measures = num_rest_measures
         # Measure width:
         # --------------------
         # |   *   *   *   *   
@@ -125,33 +140,34 @@ class BeatStaff:
         # = (1 + 3) * 5
         # = (1 + num_spaces_between_elems) * (num_beats_per_measure + 1)
         measure_width = (1 + num_spaces_between_elems) * (num_beats_per_measure + 1)
-        staff_width = measure_width * num_measures + 1
-        starting_x = x_midpoint - (staff_width // 2)
+        exercise_measures_staff_width = measure_width * num_exercise_measures + 1
+        exercise_measures_starting_x = x_midpoint - (exercise_measures_staff_width // 2)
         # measure_separator_idx -> (y, x). Everything is zero-indexed
-        self.measure_separator_yxs = [
+        self.exercise_measure_separator_yxs = [
             (y_midpoint,
-             starting_x + measure_separator_idx * measure_width)
-            for measure_separator_idx in range(num_measures + 1)]
+             exercise_measures_starting_x + measure_separator_idx * measure_width)
+            for measure_separator_idx in range(num_exercise_measures + 1)]
         # (measure, beat) -> (y, x). Everything is zero-indexed
         self.note_yxs_by_measure_beat = {}
-        for measure_idx in range(num_measures):
-            measure_start = starting_x + measure_idx * measure_width
+        for measure_idx in range(num_exercise_measures):
+            measure_start = exercise_measures_starting_x + measure_idx * measure_width
             for beat_idx in range(num_beats_per_measure):
                 measure_offset = (beat_idx + 1) * (num_spaces_between_elems + 1)
                 self.note_yxs_by_measure_beat[(measure_idx, beat_idx)] = (
                     (y_midpoint,
                      measure_start + measure_offset))
+        
 
     def draw_measure_separators(self):
-        for y, x in self.measure_separator_yxs:
+        for y, x in self.exercise_measure_separator_yxs:
             self.window.move(y, x)
             self.window.addch('|')
         self.window.refresh()
 
-    def draw_above_beat(self, measure: int, beat: int):
+    def draw_ch_above_beat(self, measure: int, beat: int, ch: str):
         y, x = self.note_yxs_by_measure_beat[(measure, beat)]
         self.window.move(y - 2, x)
-        self.window.addch('*')
+        self.window.addch(ch)
         self.window.refresh()
 
     def draw_beat(self, measure, beat):
@@ -165,7 +181,7 @@ class BeatStaff:
         self.window.refresh()
 
     def delete_measure_separators(self):
-        for y, x in self.measure_separator_yxs:
+        for y, x in self.exercise_measure_separator_yxs:
             self.window.move(y, x)
             self.window.addch(' ')
         self.window.refresh()
@@ -178,12 +194,14 @@ class BeatStaff:
 
 
 class BeatLoop:
-    def __init__(self, beats_per_measure, num_measures, bpm):
+    def __init__(self, beats_per_measure, measures_per_exercise, bpm):
         self.beats_per_measure = beats_per_measure
-        self.num_measures = num_measures
+        self.measures_per_exercise = measures_per_exercise
         self.bpm = bpm
         self.beat_start_subject = reactivex.Subject()
         self.beat_fade_subject = reactivex.Subject()
+        self.measures_start_subject = reactivex.Subject()
+        self.measures_end_subject = reactivex.Subject()
         self.measure_end_subject = reactivex.Subject()
         self.beat_idx = 0
         self.measure_idx = 0
@@ -203,6 +221,14 @@ class BeatLoop:
     def measure_end(self):
         return self.measure_end_subject
 
+    @property
+    def measures_start(self):
+        return self.measures_start_subject
+
+    @property
+    def measures_end(self):
+        return self.measures_end_subject
+
     def prepare_timer(self):
         self.timer_prepared = True
         self.next_beat_start_ns = time.time_ns() + (SECOND_NS * 60.0 / FLAGS.bpm)
@@ -216,11 +242,14 @@ class BeatLoop:
         if now_ns > self.next_beat_start_ns:
             self.beat_start_subject.on_next((self.measure_idx, self.beat_idx))
             self.next_beat_start_ns += SECOND_NS * 60.0 / self.bpm
+            if self.beat_idx == 0 and self.measure_idx == 0:
+                self.measures_end_subject.on_next(None)
+                self.measures_start_subject.on_next(None)
         elif now_ns > self.next_beat_fade_ns:
             self.beat_fade_subject.on_next((self.measure_idx, self.beat_idx))
             self.beat_idx = (self.beat_idx + 1) % self.beats_per_measure
             self.measure_idx = (
-                (self.measure_idx + 1) % self.num_measures
+                (self.measure_idx + 1) % self.measures_per_exercise
                 if self.beat_idx == 0
                 else self.measure_idx)
             if self.beat_idx == 0 and self.measure_idx == 0:
@@ -245,20 +274,16 @@ def run_loop():
     window, max_y, max_x = init_window()
     center_y, center_x = max_y // 2, max_x // 2
 
-    beat_loop = BeatLoop(FLAGS.beats_per_measure, FLAGS.num_measures, FLAGS.bpm)
-    beat_staff = BeatStaff(
-        window,
-        center_y,
-        center_x,
-        SPACES_BETWEEN_STAFF_ELEMENTS,
-        FLAGS.num_measures,
-        FLAGS.beats_per_measure)
+    beat_loop = BeatLoop(FLAGS.beats_per_measure, FLAGS.measures_per_exercise, FLAGS.bpm)
+    beat_staff = BeatStaff(window, center_y, center_x, SPACES_BETWEEN_STAFF_ELEMENTS, FLAGS.measures_per_exercise,
+                           FLAGS.beats_per_measure, None)
     beat_staff.draw_measure_separators()
     beat_loop.prepare_timer()
 
     beat_loop.beat_start.subscribe(lambda measure_and_beat: beat_staff.draw_beat(*measure_and_beat))
     beat_loop.beat_fade.subscribe(lambda measure_and_beat: beat_staff.delete_beat(*measure_and_beat))
-
+    beat_loop.measures_start_subject.subscribe(
+        lambda _: Exercise(beat_staff, [(0, 0), (1, 0), (2, 0), (3, 0)]).display_all_notes())
     while not quit_window(window):
         beat_loop.run_once()
     curses.endwin()
