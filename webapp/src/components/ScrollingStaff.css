@@ -1,6 +1,7 @@
 .staff-container {
   position: relative;
-  width: calc(100vw - 200px);
+  width: calc(100vw - 40px);
+  max-width: 1200px;
   margin: 0 auto;
   height: 200px;
   overflow: hidden;
