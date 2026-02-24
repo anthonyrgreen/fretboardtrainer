@@ -37,10 +37,14 @@ webapp/
 
 ```bash
 cd webapp
-npm run dev       # Start dev server (Vite HMR)
-npm run build     # Type-check + production build (tsc -b && vite build)
-npm run lint      # ESLint
-npm run preview   # Preview production build
+npm run dev        # Start dev server (Vite HMR)
+npm run build      # Type-check + production build (tsc -b && vite build)
+npm run lint       # ESLint
+npm run preview    # Preview production build
+npm test           # Run unit/integration tests once (vitest run)
+npm run test:watch # Run unit tests in watch mode (vitest)
+npm run test:e2e   # Run Playwright screenshot tests (requires build first)
+npm run test:e2e:update  # Regenerate screenshot baselines
 ```
 
 ## Architecture
@@ -60,6 +64,21 @@ npm run preview   # Preview production build
 - **useMetronome** — 10ms setInterval tick, Web Audio clicks, beat/measure counting, pause/resume with duration compensation
 - **useExercise** — random triad generation per chord cycle, beat label assignment (3 inversions + rests)
 - **chords.ts** — triad data for 7 natural roots, currently major only (designed to extend to minor/dim/aug)
+
+## Testing
+
+### Unit / integration tests (Vitest)
+- **Framework**: Vitest + jsdom + @testing-library/react
+- Tests live next to source files (`*.test.ts` / `*.test.tsx`)
+- Test setup in `src/setupTests.ts` (jest-dom matchers + cleanup)
+- Web Audio API and `requestAnimationFrame` are mocked in tests that need them
+
+### Screenshot tests (Playwright)
+- Config in `playwright.config.ts`, tests in `e2e/`
+- Baselines stored in `e2e/screenshots.spec.ts-snapshots/`
+- Requires `npm run build` before running (serves from `dist/`)
+- The scrolling staff is masked in playing/paused screenshots since it animates via rAF
+- Run `npm run test:e2e:update` after intentional visual changes to regenerate baselines
 
 ## Git
 
