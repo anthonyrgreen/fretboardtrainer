@@ -8,9 +8,7 @@ import "./App.css";
 const DEFAULT_SETTINGS: SettingsValues = {
   bpm: 80,
   beatsPerMeasure: 4,
-  measuresPerAttempt: 2,
-  attemptsPerExercise: 3,
-  restMeasures: 1,
+  measuresPerChord: 4,
 };
 
 function App() {
@@ -19,42 +17,66 @@ function App() {
   const metronome = useMetronome(settings.bpm, settings.beatsPerMeasure);
 
   const exercise = useExercise(
-    metronome.isPlaying,
-    settings.restMeasures,
-    settings.measuresPerAttempt,
-    settings.attemptsPerExercise,
+    settings.measuresPerChord,
     settings.beatsPerMeasure
   );
 
-  const handleToggle = () => {
-    if (metronome.isPlaying) {
-      metronome.stop();
-    } else {
-      metronome.start();
+  const handleStart = () => {
+    exercise.clearCache();
+    metronome.start();
+  };
+
+  const handleSettingsChange = (newSettings: SettingsValues) => {
+    const structureChanged =
+      newSettings.beatsPerMeasure !== settings.beatsPerMeasure ||
+      newSettings.measuresPerChord !== settings.measuresPerChord;
+
+    setSettings(newSettings);
+
+    if (structureChanged && metronome.playState !== "idle") {
+      exercise.clearCache();
+      metronome.reset();
     }
   };
 
   return (
     <div className="app">
-      <h1 className="title">Gimme Three Notes</h1>
+      <h1 className="title">Triad trainer</h1>
 
       <ScrollingStaff
         bpm={settings.bpm}
         beatsPerMeasure={settings.beatsPerMeasure}
         currentBeat={metronome.currentBeat}
         currentMeasure={metronome.currentMeasure}
-        isPlaying={metronome.isPlaying}
+        playState={metronome.playState}
         getMeasureData={exercise.getMeasureData}
       />
 
-      <button className="start-btn" onClick={handleToggle}>
-        {metronome.isPlaying ? "Stop" : "Start"}
-      </button>
+      <div className="controls">
+        {metronome.playState === "idle" && (
+          <>
+            <button className="start-btn" onClick={handleStart}>Start</button>
+            <button className="start-btn secondary" onClick={metronome.reset}>Reset</button>
+          </>
+        )}
+        {metronome.playState === "playing" && (
+          <>
+            <button className="start-btn" onClick={metronome.pause}>Pause</button>
+            <button className="start-btn secondary" onClick={metronome.reset}>Stop</button>
+          </>
+        )}
+        {metronome.playState === "paused" && (
+          <>
+            <button className="start-btn" onClick={metronome.resume}>Resume</button>
+            <button className="start-btn secondary" onClick={metronome.reset}>Reset</button>
+          </>
+        )}
+      </div>
 
       <Settings
         values={settings}
-        onChange={setSettings}
-        disabled={metronome.isPlaying}
+        onChange={handleSettingsChange}
+        disableStructure={metronome.playState === "playing"}
       />
     </div>
   );

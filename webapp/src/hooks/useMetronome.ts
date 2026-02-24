@@ -1,22 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { playClick, resumeAudioContext } from "../utils/audio";
 
+export type PlayState = "idle" | "playing" | "paused";
+
 export interface MetronomeState {
-  currentBeat: number; // 0-indexed within measure
-  currentMeasure: number; // absolute measure count since start, resets on stop
-  isPlaying: boolean;
+  currentBeat: number;
+  currentMeasure: number;
+  playState: PlayState;
 }
 
 export interface MetronomeControls {
   start: () => void;
-  stop: () => void;
+  pause: () => void;
+  resume: () => void;
+  reset: () => void;
 }
 
 export function useMetronome(
   bpm: number,
   beatsPerMeasure: number
 ): MetronomeState & MetronomeControls {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [playState, setPlayState] = useState<PlayState>("idle");
   const [currentBeat, setCurrentBeat] = useState(-1);
   const [currentMeasure, setCurrentMeasure] = useState(0);
 
@@ -26,6 +30,7 @@ export function useMetronome(
   const measureRef = useRef(0);
   const bpmRef = useRef(bpm);
   const beatsPerMeasureRef = useRef(beatsPerMeasure);
+  const pausedAtRef = useRef(0);
 
   bpmRef.current = bpm;
   beatsPerMeasureRef.current = beatsPerMeasure;
@@ -52,10 +57,20 @@ export function useMetronome(
       const msPerBeat = 60000 / bpmRef.current;
       nextBeatTimeRef.current += msPerBeat;
 
-      // If we've drifted too far, resync
       if (nextBeatTimeRef.current < now) {
         nextBeatTimeRef.current = now + msPerBeat;
       }
+    }
+  }, []);
+
+  const startInterval = useCallback(() => {
+    intervalRef.current = window.setInterval(tick, 10);
+  }, [tick]);
+
+  const stopInterval = useCallback(() => {
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
   }, []);
 
@@ -67,7 +82,6 @@ export function useMetronome(
     setCurrentMeasure(0);
 
     const msPerBeat = 60000 / bpmRef.current;
-    nextBeatTimeRef.current = performance.now() + msPerBeat;
 
     // Fire the first beat immediately
     beatRef.current = 0;
@@ -77,30 +91,37 @@ export function useMetronome(
     setCurrentMeasure(0);
 
     nextBeatTimeRef.current = performance.now() + msPerBeat;
+    startInterval();
+    setPlayState("playing");
+  }, [startInterval]);
 
-    intervalRef.current = window.setInterval(tick, 10);
-    setIsPlaying(true);
-  }, [tick]);
+  const pause = useCallback(() => {
+    stopInterval();
+    pausedAtRef.current = performance.now();
+    setPlayState("paused");
+  }, [stopInterval]);
 
-  const stop = useCallback(() => {
-    if (intervalRef.current !== null) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    setIsPlaying(false);
+  const resume = useCallback(() => {
+    resumeAudioContext();
+    // Shift the next beat time forward by the duration of the pause
+    const pauseDuration = performance.now() - pausedAtRef.current;
+    nextBeatTimeRef.current += pauseDuration;
+    startInterval();
+    setPlayState("playing");
+  }, [startInterval]);
+
+  const reset = useCallback(() => {
+    stopInterval();
+    setPlayState("idle");
     setCurrentBeat(-1);
     setCurrentMeasure(0);
     beatRef.current = -1;
     measureRef.current = 0;
-  }, []);
+  }, [stopInterval]);
 
   useEffect(() => {
-    return () => {
-      if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
+    return () => stopInterval();
+  }, [stopInterval]);
 
-  return { currentBeat, currentMeasure, isPlaying, start, stop };
+  return { currentBeat, currentMeasure, playState, start, pause, resume, reset };
 }

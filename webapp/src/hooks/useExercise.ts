@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
 import { getRandomTriad, type Triad } from "../utils/chords";
 
 export interface BeatData {
@@ -13,53 +13,34 @@ export interface MeasureData {
 
 interface ExerciseCycle {
   triad: Triad;
-  startMeasure: number; // absolute measure index where this cycle starts
-  length: number; // total measures in this cycle
+  startMeasure: number;
+  length: number;
 }
 
 /**
  * Produces measure data driven by the metronome's measure count.
  *
- * Exercise cycle structure:
- *   - `restMeasures` rest measures (count-in)
- *   - For each attempt (1..attemptsPerExercise):
- *     - `measuresPerAttempt` play measures (same chord, all 3 inversions per measure)
- *     - 1 rest measure between attempts (not after the last)
- *   - New random chord → repeat
+ * Each chord repeats for `measuresPerChord` measures, then a new
+ * random chord is picked.
  */
 export function useExercise(
-  isPlaying: boolean,
-  restMeasures: number,
-  measuresPerAttempt: number,
-  attemptsPerExercise: number,
+  measuresPerChord: number,
   beatsPerMeasure: number
 ) {
   const cycleCache = useRef(new Map<number, ExerciseCycle>());
 
-  // Clear cache on start so each session gets fresh chords.
-  // Cache is kept on stop so the paused display retains its chords.
-  useEffect(() => {
-    if (isPlaying) {
-      cycleCache.current.clear();
-    }
-  }, [isPlaying]);
-
-  const getCycleLength = useCallback(() => {
-    const playMeasures = attemptsPerExercise * measuresPerAttempt;
-    const restBetween = attemptsPerExercise > 1 ? attemptsPerExercise - 1 : 0;
-    return restMeasures + playMeasures + restBetween;
-  }, [restMeasures, measuresPerAttempt, attemptsPerExercise]);
+  const clearCache = useCallback(() => {
+    cycleCache.current.clear();
+  }, []);
 
   const getCycleForMeasure = useCallback(
     (measureIndex: number): ExerciseCycle => {
-      const cycleLen = getCycleLength();
-      const cycleIndex = Math.floor(measureIndex / cycleLen);
+      const cycleIndex = Math.floor(measureIndex / measuresPerChord);
 
       if (cycleCache.current.has(cycleIndex)) {
         return cycleCache.current.get(cycleIndex)!;
       }
 
-      // Keep cache bounded
       if (cycleCache.current.size > 50) {
         const firstKey = cycleCache.current.keys().next().value;
         if (firstKey !== undefined) cycleCache.current.delete(firstKey);
@@ -67,75 +48,27 @@ export function useExercise(
 
       const cycle: ExerciseCycle = {
         triad: getRandomTriad("major"),
-        startMeasure: cycleIndex * cycleLen,
-        length: cycleLen,
+        startMeasure: cycleIndex * measuresPerChord,
+        length: measuresPerChord,
       };
       cycleCache.current.set(cycleIndex, cycle);
       return cycle;
     },
-    [getCycleLength]
+    [measuresPerChord]
   );
 
   const getMeasureData = useCallback(
     (measureIndex: number): MeasureData => {
       const cycle = getCycleForMeasure(measureIndex);
-      const posInCycle = measureIndex - cycle.startMeasure;
-
-      // Rest measures at start of cycle
-      if (posInCycle < restMeasures) {
-        return {
-          measureIndex,
-          beats: makeRestBeats(beatsPerMeasure),
-        };
-      }
-
-      // Play + rest-between-attempts
-      let pos = posInCycle - restMeasures;
-      for (let attempt = 0; attempt < attemptsPerExercise; attempt++) {
-        // Play measures for this attempt
-        if (pos < measuresPerAttempt) {
-          return {
-            measureIndex,
-            beats: makePlayBeats(cycle.triad, beatsPerMeasure),
-          };
-        }
-        pos -= measuresPerAttempt;
-
-        // Rest between attempts
-        if (attempt < attemptsPerExercise - 1) {
-          if (pos < 1) {
-            return {
-              measureIndex,
-              beats: makeRestBeats(beatsPerMeasure),
-            };
-          }
-          pos -= 1;
-        }
-      }
-
-      // Fallback (shouldn't happen)
       return {
         measureIndex,
-        beats: makeRestBeats(beatsPerMeasure),
+        beats: makePlayBeats(cycle.triad, beatsPerMeasure),
       };
     },
-    [
-      getCycleForMeasure,
-      restMeasures,
-      measuresPerAttempt,
-      attemptsPerExercise,
-      beatsPerMeasure,
-    ]
+    [getCycleForMeasure, beatsPerMeasure]
   );
 
-  return { getMeasureData };
-}
-
-function makeRestBeats(beatsPerMeasure: number): BeatData[] {
-  return Array.from({ length: beatsPerMeasure }, () => ({
-    label: "",
-    isRest: true,
-  }));
+  return { getMeasureData, clearCache };
 }
 
 function makePlayBeats(triad: Triad, beatsPerMeasure: number): BeatData[] {

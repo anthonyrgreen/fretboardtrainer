@@ -17,8 +17,15 @@
   letter-spacing: 1px;
 }
 
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 280px;
+}
+
 .start-btn {
-  padding: 12px 48px;
+  padding: 12px 0;
   font-size: 18px;
   font-weight: 600;
   border-radius: 8px;
@@ -33,4 +40,19 @@
   background: #e8a43a;
   color: #1a1a1a;
   border-color: #e8a43a;
+}
+
+.start-btn.span-2 {
+  grid-column: 1 / -1;
+}
+
+.start-btn.secondary {
+  border-color: #cc4444;
+  color: #cc4444;
+}
+
+.start-btn.secondary:hover {
+  background: #cc4444;
+  color: #1a1a1a;
+  border-color: #cc4444;
 }

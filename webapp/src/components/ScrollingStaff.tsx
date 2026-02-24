@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { MeasureData } from "../hooks/useExercise";
+import type { PlayState } from "../hooks/useMetronome";
 import "./ScrollingStaff.css";
 
 const PIXELS_PER_BEAT = 140;
@@ -10,7 +11,7 @@ interface ScrollingStaffProps {
   beatsPerMeasure: number;
   currentBeat: number;
   currentMeasure: number;
-  isPlaying: boolean;
+  playState: PlayState;
   getMeasureData: (measureIndex: number) => MeasureData;
 }
 
@@ -19,38 +20,55 @@ export function ScrollingStaff({
   beatsPerMeasure,
   currentBeat,
   currentMeasure,
-  isPlaying,
+  playState,
   getMeasureData,
 }: ScrollingStaffProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const startTimeRef = useRef(0);
   const rafRef = useRef(0);
   const [scrollOffset, setScrollOffset] = useState(0);
 
-  const pixelsPerMeasure = PIXELS_PER_BEAT * beatsPerMeasure;
-  const msPerBeat = 60000 / bpm;
-  const pixelsPerMs = PIXELS_PER_BEAT / msPerBeat;
+  // Refs so the rAF callback always reads fresh values
+  const bpmRef = useRef(bpm);
+  const currentBeatRef = useRef(currentBeat);
+  const currentMeasureRef = useRef(currentMeasure);
+  const beatsPerMeasureRef = useRef(beatsPerMeasure);
+  const lastBeatTimeRef = useRef(0);
 
-  // Animation loop
+  bpmRef.current = bpm;
+  beatsPerMeasureRef.current = beatsPerMeasure;
+
+  // Track when beats change to anchor interpolation
+  if (currentBeat !== currentBeatRef.current || currentMeasure !== currentMeasureRef.current) {
+    lastBeatTimeRef.current = performance.now();
+    currentBeatRef.current = currentBeat;
+    currentMeasureRef.current = currentMeasure;
+  }
+
+  const pixelsPerMeasure = PIXELS_PER_BEAT * beatsPerMeasure;
+
+  // Animation loop — derives scroll position from metronome beat count
   useEffect(() => {
-    if (!isPlaying) {
-      // Don't reset scrollOffset — keep the display frozen in place
-      return;
+    if (playState === "playing") {
+      const animate = () => {
+        const msPerBeat = 60000 / bpmRef.current;
+        const globalBeat =
+          currentMeasureRef.current * beatsPerMeasureRef.current +
+          currentBeatRef.current;
+        const timeSinceBeat = performance.now() - lastBeatTimeRef.current;
+        const fraction = Math.min(timeSinceBeat / msPerBeat, 1);
+        setScrollOffset((globalBeat + fraction) * PIXELS_PER_BEAT);
+        rafRef.current = requestAnimationFrame(animate);
+      };
+
+      rafRef.current = requestAnimationFrame(animate);
+      return () => cancelAnimationFrame(rafRef.current);
     }
 
-    // Reset scroll to match the metronome restarting from 0
-    setScrollOffset(0);
-    startTimeRef.current = performance.now();
-
-    const animate = () => {
-      const elapsed = performance.now() - startTimeRef.current;
-      setScrollOffset(elapsed * pixelsPerMs);
-      rafRef.current = requestAnimationFrame(animate);
-    };
-
-    rafRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [isPlaying, pixelsPerMs]);
+    if (playState === "idle") {
+      setScrollOffset(0);
+    }
+    // "paused" — stop animating, keep current offset
+  }, [playState]);
 
   // Determine visible measures
   const containerWidth = containerRef.current?.clientWidth ?? 800;
@@ -65,7 +83,8 @@ export function ScrollingStaff({
     measures.push(getMeasureData(i));
   }
 
-  const isOnBeat = isPlaying && currentBeat >= 0;
+  const isActive = playState === "playing";
+  const isOnBeat = isActive && currentBeat >= 0;
 
   return (
     <div className="staff-container" ref={containerRef}>
@@ -94,19 +113,19 @@ export function ScrollingStaff({
               style={{ left: measureX }}
             >
               {/* Measure separator */}
-              <div className={`measure-separator${isPlaying && measure.measureIndex === currentMeasure && currentBeat === 0 ? " active" : ""}`} />
+              <div className={`measure-separator${isActive && measure.measureIndex === currentMeasure && currentBeat === 0 ? " active" : ""}`} />
 
               {/* Beats */}
               {measure.beats.map((beat, beatIdx) => {
                 const beatX = beatIdx * PIXELS_PER_BEAT;
-                const isActive = isPlaying && measure.measureIndex === currentMeasure && beatIdx === currentBeat;
+                const beatIsActive = isActive && measure.measureIndex === currentMeasure && beatIdx === currentBeat;
                 return (
                   <div
                     key={beatIdx}
                     className="beat-group"
                     style={{ left: beatX }}
                   >
-                    {beatIdx > 0 && <div className={`beat-tick${isActive ? " active" : ""}`} />}
+                    {beatIdx > 0 && <div className={`beat-tick${beatIsActive ? " active" : ""}`} />}
                     <div className="beat-label">
                       {beat.isRest ? (
                         <RestSymbol />
