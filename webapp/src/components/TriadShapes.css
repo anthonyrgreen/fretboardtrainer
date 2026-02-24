@@ -20,6 +20,7 @@
   display: flex;
   justify-content: center;
   gap: 24px;
+  flex-wrap: wrap;
 }
 
 .shape-diagram {
@@ -27,6 +28,7 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  width: 150px;
 }
 
 .shape-title {
@@ -38,6 +40,8 @@
 
 .fretboard-svg {
   display: block;
+  width: 100%;
+  height: auto;
 }
 
 .inversions-text {
@@ -50,11 +54,11 @@
 
 .inversions-list {
   list-style: none;
-  padding: 0;
+  padding: 0 8px;
   margin: 8px auto;
   font-size: 14px;
   color: #aaa;
-  width: fit-content;
+  max-width: 480px;
 }
 
 .inversions-list li {
@@ -135,6 +139,7 @@
 .inversion-fretboard {
   display: block;
   margin: 8px auto 0;
+  max-width: 100%;
 }
 
 .shapes-note {

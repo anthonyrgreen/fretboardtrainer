@@ -304,8 +304,6 @@ function FretboardDiagram({ shape }: { shape: ShapeData }) {
       <svg
         className="fretboard-svg"
         viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-        width={SVG_W}
-        height={SVG_H}
       >
         {/* Fret lines (horizontal) */}
         {Array.from({ length: FRET_ROWS + 1 }, (_, i) => (
@@ -400,8 +398,6 @@ function InversionFretboard({ rootIndex, shapes, activeStrings }: InvFretboardPr
     <svg
       className="fretboard-svg inversion-fretboard"
       viewBox={`0 0 ${svgW} ${svgH}`}
-      width={svgW}
-      height={svgH}
     >
       {/* Fret wires */}
       {Array.from({ length: H_SPAN + 1 }, (_, i) => {
